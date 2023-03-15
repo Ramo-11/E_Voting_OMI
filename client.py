@@ -24,6 +24,8 @@ class Client:
         message_length += b' ' * (self.header - len(message_length))
         self.sock.send(message_length)
         self.sock.send(message)
+        message_from_server = self.sock.recv(self.header).decode(self.format)
+        print(f'server says: {message_from_server}')
 
 def main():
     client = Client()

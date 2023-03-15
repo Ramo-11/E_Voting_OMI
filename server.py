@@ -23,10 +23,11 @@ class Server:
     def listen_to_client(self, client, address):
         connected = True
         while connected:
-            message_length = client.recv(64).decode(self.format)
+            message_length = client.recv(self.header).decode(self.format)
             if message_length:
                 message = client.recv(int(message_length)).decode(self.format)
                 print(f'[{address}]: {message}')
+                client.send('Gotcha buddy'.encode(self.format))
                 if message == 'disconnect':
                     connected = False
         client.close()
