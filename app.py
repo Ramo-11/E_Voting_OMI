@@ -4,6 +4,9 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from server import Server
+from client import Client
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Vhrmonh925@localhost/postgres'
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -75,6 +78,26 @@ def signup():
 def logout():
     logout_user()
     return redirect(url_for('login'))
+
+# @app.route('/send_to_server', methods=['POST'])
+# @login_required
+# def send_to_server():
+#     # Initialize Server
+#     server = Server()
+#     server.start()
+
+#     # Initialize Client
+#     client = Client()
+#     client.start()
+#     prompt = request.form['msg_to_server']
+
+
+
+
+
+
+
+
 
 if __name__ == '__main__':
     app.run(port=3000, debug=True)
