@@ -4,10 +4,10 @@
 		<meta charset="UTF-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="stylesheet" href="{{ url_for('static', filename='login_signup.css') }}">
 		<title>Signup</title>
 	</head>
 	<body>
-		<h2>Signup</h2>
 		{% with messages = get_flashed_messages() %}
 		{% if messages %}
 			<ul class="flashes">
@@ -17,15 +17,18 @@
 			</ul>
 		{% endif %}
 		{% endwith %}
-		<form method="POST" action="/signup">
-			<label for="username">Username:</label>
-			<input type="text" name="username" autocomplete="off" minlength="4" maxlength="20" required>
-			<br>
-			<label for="password">Password:</label>
-			<input type="password" name="password" minlength="4" maxlength="20" autocomplete="off" required>
-			<br>
-			<button type="submit">Signup</button>
-		</form>
-		<p>Already have an account? <a href="/login">Login here</a></p>
+		<div class="main_div">
+			<h2>Signup</h2>
+			<form method="POST" action="/signup">
+				<label for="username">Username:</label>
+				<input type="text" name="username" autocomplete="off" minlength="4" maxlength="20" required>
+				<br>
+				<label for="password">Password:</label>
+				<input type="password" name="password" minlength="4" maxlength="20" autocomplete="off" required>
+				<br>
+				<button type="submit">Signup</button>
+			</form>
+			<p>Already have an account? <a href="/login">Login here</a></p>
+		</div>
 	</body>
 </html>

@@ -4,6 +4,7 @@
 		<meta charset="UTF-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="stylesheet" href="{{ url_for('static', filename='login_signup.css') }}">
 		<title>Login</title>
 	</head>
 	<body>
@@ -16,16 +17,18 @@
 			</ul>
 		{% endif %}
 		{% endwith %}
-		<h2>Login</h2>
-		<form method="POST" action="/login">
-			<label for="username">Username:</label>
-			<input type="text" name="username" autocomplete="off" required>
-			<br>
-			<label for="password">Password:</label>
-			<input type="password" name="password" autocomplete="off" required>
-			<br>
-			<button type="submit">Login</button>
-		</form>
-		<p>New user? <a href="/signup">Signup here</a></p>
+		<div class="main_div">
+			<h2>Login</h2>
+			<form method="POST" action="/login">
+				<label for="username">Username:</label>
+				<input type="text" name="username" autocomplete="off" required>
+				<br>
+				<label for="password">Password:</label>
+				<input type="password" name="password" autocomplete="off" required>
+				<br>
+				<button type="submit">Login</button>
+			</form>
+			<p>New user? <a href="/signup">Signup here</a></p>
+		</div>
 	</body>
 </html>
