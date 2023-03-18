@@ -26,7 +26,7 @@ def login():
             response.set_cookie('token', token)
             return response
         else:
-            flash(f"Cannot login: {response.json()['error']}")
+            flash(f"Cannot login: {response.text}")
             return render_template('login.html')
     if 'token' in request.cookies:
         return redirect(url_for('routes.home'))
