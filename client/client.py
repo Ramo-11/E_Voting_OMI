@@ -1,8 +1,6 @@
-import socket
-import requests
 from routes import routes as routes_
 
-from flask import Flask, render_template, redirect, url_for, request, flash, make_response
+from flask import Flask
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 app.config['SECRET_KEY'] = 'mysecretkey'
