@@ -1,59 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='login_signup.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='home.css') }}">
-
-    <title>Document</title>
-</head>
-
-<body>
-
-
     <head>
-        <title>Vote for the Best CS Class Title</title>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='login_signup.css') }}">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='home.css') }}">
+
+        <title>Document</title>
     </head>
 
     <body>
-        <h1>Vote for the Best CS Class Title</h1>
-        <form action="submit-vote.php" method="post">
-            <p>
-                <label for="option-c" style="display: inline-block;">
-                    <input type="radio" name="vote" id="option-a" value="a" required style="display: inline-block;">
-                    Option A: Introduction to Computer Science
-                </label>
+        {% with messages = get_flashed_messages() %}
+		{% if messages %}
+			<ul class="flashes">
+			{% for message in messages %}
+				<li>{{ message }}</li>
+			{% endfor %}
+			</ul>
+		{% endif %}
+		{% endwith %}
+        <form method="POST" action="/message">
+            <label for="message">message to server:</label>
+            <input type="text" name="message" autocomplete="off" required>
+            <button type="submit">Send</button>
+        </form>
 
-            </p>
-            <p>
-                <label for="option-c" style="display: inline-block;">
-                    <input type="radio" name="vote" id="option-b" value="b" required style="display: inline-block;">
-                    Option B: Algorithms and Data Structures
-                </label>
-
-            </p>
-            <p>
-                <label for="option-c" style="display: inline-block;">
-                    <input type="radio" name="vote" id="option-c" value="c" required style="display: inline-block;">
-                    Option C: Web Development
-                </label>
-
-            </p>
-            <input type="submit" value="Submit Vote">
+        <form action="{{ url_for('routes.logout') }}" method="post">
+            <button type="submit">Logout</button>
         </form>
     </body>
-
-
-
-
-
-
-    <form action="{{ url_for('routes.logout') }}" method="post">
-        <button type="submit">Logout</button>
-    </form>
-</body>
 
 </html>

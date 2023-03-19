@@ -7,11 +7,42 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, LoginManager, login_user, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
+from flask_socketio import SocketIO
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Vhrmonh925@192.168.1.116/postgres'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://evoting_user:123456@127.0.0.1/postgres'
 app.config['SECRET_KEY'] = 'mysecretkey'
 db = SQLAlchemy(app)
+socketio = SocketIO(app)
+
+class Server:
+    def __init__(self, port=3002):
+        self.port = port
+        self.server = socket.gethostbyname('localhost')
+        self.header = 64
+        self.format = 'utf-8'
+
+    def start(self):
+        print('Starting Server')
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.bind((self.server, self.port))
+        self.sock.listen()
+        print(f'Server is listening on {self.server}, port {self.port}')
+        while True:
+            client, address = self.sock.accept()
+            print('Connection from: {}'.format(str(address)))
+            self.thread = threading.Thread(target=self.listen_to_client, args=(client, address))
+            self.thread.start()
+
+    def listen_to_client(self, client, address):
+        message_length = client.recv(64).decode(self.format)
+        if message_length:
+            message = client.recv(int(message_length)).decode(self.format)
+            print(f'[{address}]: {message}')
+            socketio.emit('message', {'address': str(address), 'message': message})
+        client.close()
+        print(f'[{address}] disconnected')
+        socketio.emit('disconnect', {'address': str(address)})
 
 jwt = JWTManager(app)
 
@@ -42,6 +73,7 @@ def receive_message():
 
 @app.route('/api/login', methods=['POST'])
 def login():
+    print("herer?")
     if current_user.is_authenticated:
         return jsonify({'success': 'User was successfully logged in.'}), 200
     username = request.json['username']
@@ -79,44 +111,9 @@ def logout():
         return response
     except:
         return jsonify({'error': 'Unable to log user out.'}), 400
-    
 
-class Server:
-    def __init__(self, port=3000):
-        self.port = port
-        self.server = socket.gethostbyname('localhost')
-        self.header = 64
-        self.format = 'utf-8'
-        
-    def start(self):
-        print('Starting Server')
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.bind((self.server, self.port))
-        self.sock.listen()
-        print(f'Server is listening on {self.server}')
-        while True:
-            client, address = self.sock.accept()
-            print('Connection from: {}'.format(str(address)))
-            self.thread = threading.Thread(target=self.listen_to_client, args=(client, address))
-            self.thread.start()
-    
-    def listen_to_client(self, client, address):
-        connected = True
-        while connected:
-            message_length = client.recv(self.header).decode(self.format)
-            if message_length:
-                message = client.recv(int(message_length)).decode(self.format)
-                print(f'[{address}]: {message}')
-                client.send('Gotcha buddy'.encode(self.format))
-                if message == 'disconnect':
-                    connected = False
-        client.close()
-        
-        
-def main():
-    server = Server()
-    server.start()
-    
 if __name__ == '__main__':
-    # main()
-    app.run(port=3001, debug=True)
+    server = Server()
+    server_thread = threading.Thread(target=server.start)
+    server_thread.start()
+    socketio.run(app, port=3001)
