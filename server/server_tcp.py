@@ -1,7 +1,13 @@
 import socket
 import threading
+import sys
 
-from ..utils.messages.collector_message import Collector_Message
+sys.path.insert(1, r'C:\Users\ismae\E_Voting_OMI')
+from  utils.messages import collector_message
+
+
+
+
 
 class Server:
     def __init__(self, port=3002):
@@ -27,7 +33,7 @@ class Server:
         key_hash = b'\x00'*64
         election_ID = b'\x00'*16
         acceptance = 1
-        message = Collector_Message(message_type, key_hash, election_ID, acceptance)
+        message = collector_message.Collector_Message(message_type, key_hash, election_ID, acceptance)
         return message.to_bytes()
 
     def listen_to_client(self, client, address):
@@ -41,6 +47,5 @@ class Server:
                 message = self.construct_message()
                 print(f'message {message}')
                 client.send(message)
-                if message == 'disconnect':
-                    connected = False
+                connected = False
         client.close()
