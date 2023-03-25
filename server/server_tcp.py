@@ -15,6 +15,9 @@ class Server:
         self.server = socket.gethostbyname('localhost')
         self.header = 64
         self.format = 'utf-8'
+        self.voters_num = 3
+        self.ballots = 0
+        self.ballots_prime = 0
 
     def start(self):
         print('Starting Server')
@@ -52,6 +55,8 @@ class Server:
                     client.send(final_shares.encode(self.format))
                 if message == 'disconnect':
                     connected = False
+                else:
+                    self.calculate_total_ballots(message)
         client.close()
 
     def generateRandomShares(self):
@@ -65,3 +70,14 @@ class Server:
         self.x_prime = random_nums[1]
 
         return [self.x, self.x_prime]
+
+    def calculate_total_ballots(self, ballot):
+        self.ballots += ballot[0]
+        self.ballots_prime += ballot[1]
+        self.voters_num = self.voters_num - 1
+        if self.voters_num == 0:
+            print(f'total ballots: {self.ballots}')
+            print(f'total ballots prime: {self.ballots_prime}')
+        else:
+            print(f'current ballots: {self.ballots}. Waiting on other votes')
+

@@ -33,3 +33,7 @@ if __name__ == '__main__':
     for vote in votes:
         ballot = voter2.generate_all_ballots(vote, all_shares)
         print(f'ballot: {ballot}')
+
+    voter2.start(port=3003)
+    voter2.send_message(ballot)
+    voter2.close_connection()
