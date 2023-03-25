@@ -1,4 +1,7 @@
-from client_tcp import Client
+import sys
+
+sys.path.insert(1, '/Users/omar.abdelalim/codespace/E_Voting_OMI')
+from client.client_tcp import Client
 
 if __name__ == '__main__':
     voter3 = Client()

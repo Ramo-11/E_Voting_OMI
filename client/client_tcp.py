@@ -19,10 +19,10 @@ class Client:
         Send the length of the message first,
         Then, send the actual message
         """
-        # message = message.encode(self.format)
+        message = message.encode(self.format)
         message_length = str(len(message)).encode(self.format)
         message_length += b' ' * (self.header - len(message_length))
         self.sock.send(message_length)
         self.sock.send(message)
-        message_from_server = self.sock.recv(self.header)
+        message_from_server = self.sock.recv(self.header).decode(self.format)
         print(f'server says: {message_from_server}')

@@ -2,12 +2,8 @@ import socket
 import threading
 import sys
 
-sys.path.insert(1, r'C:\Users\ismae\E_Voting_OMI')
-from  utils.messages import collector_message
-
-
-
-
+sys.path.insert(1, '/Users/omar.abdelalim/codespace/E_Voting_OMI')
+from utils.messages import collector_message
 
 class Server:
     def __init__(self, port=3002):
@@ -40,12 +36,10 @@ class Server:
         connected = True
         while connected:
             message_length = client.recv(self.header).decode(self.format)
-            print (message_length)
             if message_length:
                 message = client.recv(int(message_length)).decode(self.format)
                 print(f'[{address}]: {message}')
-                message = self.construct_message()
-                print(f'message {message}')
-                client.send(message)
-                connected = False
+                client.send('Gotcha buddy'.encode(self.format))
+                if message == 'disconnect':
+                    connected = False
         client.close()
