@@ -42,19 +42,20 @@ class Server:
             message_length = client.recv(self.header).decode(self.format)
             if message_length:
                 message = client.recv(int(message_length)).decode(self.format)
+                print(f'Message received from client: {message}')
                 if message == 'closing connection':
                     print(f'Connection closed with client: {address}')
                     break;
-                print(f'Message received from client: {message}')
-                self.generateRandomShares()
-                client.send('Gotcha buddy'.encode(self.format))
+                if message == 'give me shares':
+                    encoded_list = [str(s) for s in self.generateRandomShares()]
+                    final_shares = encoded_list[0] + "," + encoded_list[1]
+                    client.send(final_shares.encode(self.format))
                 if message == 'disconnect':
                     connected = False
         client.close()
 
     def generateRandomShares(self):
-        seed_int = int(time.time())
-        random.seed(seed_int)
+        random.seed(self.port)
 
         num_list = list(range(-200, 1500))
 
@@ -63,4 +64,4 @@ class Server:
         self.x = random_nums[0]
         self.x_prime = random_nums[1]
 
-        print(f'x + x_prime: {self.x, self.x_prime}')
+        return [self.x, self.x_prime]

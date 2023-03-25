@@ -3,9 +3,9 @@ import socket
 class Client:
     def __init__(self, location):
         self.voting_vector = {
-            "What is the best CS class?": ["CSCI 240000", "CSCI 55500", "MATH 51100"],
-            "What is the hardest homework in CSCI 55500?": ["Homework 1", "Homework 2", "Homework 3"],
-            "Who is the best professor in the CS department?": ["Dr. Xzou", "Kelly", "Andy Harris"]
+            "What is the best CS class?": ["240", "555", "511"],
+            "What is the hardest homework in CSCI 55500?": ["H1", "H2", "H3"],
+            "Who is the best professor in the CS department?": ["Xzou", "Kelly", "Andy"]
         } 
         self.server = socket.gethostbyname('localhost')
         self.header = 64
@@ -16,7 +16,6 @@ class Client:
         """
         Connect to the server through TCP
         """
-        print(f'port: {port}')
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.server, int(port)))
 
@@ -25,13 +24,20 @@ class Client:
         Send the length of the message first,
         Then, send the actual message
         """
-        message = message.encode(self.format)
-        message_length = str(len(message)).encode(self.format)
+        encoded_message = str(message).encode(self.format)
+        message_length = str(len(encoded_message)).encode(self.format)
         message_length += b' ' * (self.header - len(message_length))
         self.sock.send(message_length)
-        self.sock.send(message)
+        self.sock.send(encoded_message)
+    
+    def get_shares(self):
+        share = 0
+        share_prime = 0
+        self.send_message('give me shares')
         message_from_server = self.sock.recv(self.header).decode(self.format)
-        print(f'server says: {message_from_server}')
+        share = int(message_from_server.split(',')[0])
+        share_prime = int(message_from_server.split(',')[1])
+        return [share, share_prime]
 
     def close_connection(self):
         """
@@ -72,8 +78,15 @@ class Client:
             vector_list = list(vector)
             vector_list[answer_index] = '1'
             new_vector = ''.join(vector_list)
-
             v = int(new_vector, 2)
             v_prime = int(new_vector[::-1], 2)
             voting_list.append([v, v_prime]) 
         return voting_list
+    
+    def generate_all_ballots(self, vote, shares):
+        ballots = self.generate_ballots(vote[0], shares[0])
+        ballots_prime = self.generate_ballots(vote[1], shares[1])
+        return [ballots, ballots_prime]
+
+    def generate_ballots(self, vote, shares):
+        return vote + sum(shares)
