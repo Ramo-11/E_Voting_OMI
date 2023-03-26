@@ -1,7 +1,11 @@
 from client_tcp import Client
 
+import os
 import sys
-sys.path.insert(1, r'C:\Users\ismae\E_Voting_OMI')
+
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, ROOT_DIR)
+
 from  utils.messages import admin_message
 
 

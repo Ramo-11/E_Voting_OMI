@@ -1,7 +1,12 @@
+import os
 import sys
-import time
 
-sys.path.insert(1, '/Users/omar.abdelalim/codespace/E_Voting_OMI')
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, ROOT_DIR)
+
+CLIENT_DIR = os.path.join(ROOT_DIR, 'Client')
+sys.path.insert(1, CLIENT_DIR)
+
 from client.client_tcp import Client
 
 if __name__ == '__main__':

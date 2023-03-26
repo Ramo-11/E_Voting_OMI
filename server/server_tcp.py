@@ -2,9 +2,12 @@ import socket
 import threading
 import sys
 import random
-import time
+import os
+import sys
 
-sys.path.insert(1, '/Users/omar.abdelalim/codespace/E_Voting_OMI')
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, ROOT_DIR)
+
 from utils.messages import collector_message
 
 class Server:
@@ -48,12 +51,12 @@ class Server:
                 print(f'Message received from client: {message}')
                 if message == 'closing connection':
                     print(f'Connection closed with client: {address}')
-                    break;
-                if message == 'give me shares':
+                    connected = False
+                elif message == 'give me shares':
                     encoded_list = [str(s) for s in self.generateRandomShares()]
                     final_shares = encoded_list[0] + "," + encoded_list[1]
                     client.send(final_shares.encode(self.format))
-                if message == 'disconnect':
+                elif message == 'disconnect':
                     connected = False
                 else:
                     self.calculate_total_ballots(message)
@@ -66,12 +69,13 @@ class Server:
 
         random_nums = random.sample(num_list, 2)
 
-        self.x = random_nums[0]
-        self.x_prime = random_nums[1]
+        self.x = int(random_nums[0])
+        self.x_prime = (random_nums[1])
 
         return [self.x, self.x_prime]
 
     def calculate_total_ballots(self, ballot):
+        ballot = eval(ballot)
         self.ballots += ballot[0]
         self.ballots_prime += ballot[1]
         self.voters_num = self.voters_num - 1
