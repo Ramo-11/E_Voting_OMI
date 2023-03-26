@@ -53,7 +53,7 @@ class Server:
                     print(f'Connection closed with client: {address}')
                     connected = False
                 elif message == 'give me shares':
-                    encoded_list = [str(s) for s in self.generateRandomShares()]
+                    encoded_list = [str(s) for s in self.generate_random_shares()]
                     final_shares = encoded_list[0] + "," + encoded_list[1]
                     client.send(final_shares.encode(self.format))
                 elif message == 'disconnect':
@@ -62,7 +62,7 @@ class Server:
                     self.calculate_total_ballots(message)
         client.close()
 
-    def generateRandomShares(self):
+    def generate_random_shares(self):
         random.seed(self.port)
 
         num_list = list(range(-200, 1500))
