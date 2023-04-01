@@ -16,14 +16,25 @@ from parent_server import Server
 class Collector_Server(Server):
     def __init__(self, port=3002):
         super().__init__(port)
+        self.index = None
+        self.election_id = None
+        self.pk_length = None
+        self.pk = None
+        self.key_hash = None
+        self.other_c_host_length = None
+        self.other_c_host = None
+        self.other_c_port = None
+        self.other_c_pk_length = None
+        self.other_c_pk = None
+        self.m = None
         self.x = 0
         self.x_prime = 0
 
     def listen_to_client(self, client, address):
         connected = True
         while connected:
-            message = client.recv(int(self.length)).decode(self.format)
-            message_type = message.split(',')[0]
+            message = client.recv(int(self.length))
+            message_type = str(int.from_bytes(message.split(b',')[0], byteorder='big'))
             print(f'Message received from client: {message}')
             if message_type == '1':
                 print(f'Connection closed with client: {address}')
@@ -33,9 +44,23 @@ class Collector_Server(Server):
                 final_shares = encoded_list[0] + "," + encoded_list[1]
                 client.send(final_shares.encode(self.format))
             elif message_type == '4':
-                collector_message = Collector_Message(Message_Type.MESSAGE.COLLECT_STATUS)
+                message_parts = message.split(b',')
+                self.election_id = message_parts[1]
+                self.index = message_parts[2]
+                self.pk_length = message_parts[3]
+                self.pk = message_parts[4]
+                self.key_hash = message_parts[5]
+                collector_message = Collector_Message(Message_Type.MESSAGE.COLLECT_STATUS, self.election_id)
                 collector_message = collector_message.to_bytes()
                 client.send(collector_message)
+            elif message_type == '6':
+                message_parts = message.split(b',')
+                self.other_c_host_length = message_parts[2]
+                self.other_c_host = message_parts[3].decode('utf-8')
+                self.other_c_port = int.from_bytes(message_parts[4], byteorder='big')
+                self.other_c_pk_length = message_parts[5]
+                self.other_c_pk = message_parts[6]
+                print(f'host on port {self.port} received information about the other host on port {self.other_c_port}')
             else:
                 print(f'Invalid message received from client: {address}')
                 connected = False

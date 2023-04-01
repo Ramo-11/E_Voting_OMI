@@ -48,7 +48,8 @@ class Server:
             print('Socket is already connected')
 
     def close_connection(self):
-        self.send_message(str(Message_Type.MESSAGE.DISCONNECT.value).encode())
+        disconnect_message = Message_Type.MESSAGE.DISCONNECT.value.to_bytes(1, byteorder='big')
+        self.send_message(disconnect_message)
         self.server_socket.close()
         print('Connection closed.')
 
@@ -58,8 +59,9 @@ class Server:
 
     def receive_message(self):
         self.server_socket.settimeout(10)
-        message = self.server_socket.recv(int(self.length)).decode(self.format)
+        message = self.server_socket.recv(int(self.length))
         print(f'message received: {message}')
+        return message
     
     def listen_to_client(self, client, address):
        pass

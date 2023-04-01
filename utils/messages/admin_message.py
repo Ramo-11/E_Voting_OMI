@@ -1,32 +1,31 @@
-class Admin_Message:
+class Registration_Message:
     def __init__(self, message_type, collector_index):
-        self.message_type = message_type
-        self.election_ID = '1234567890123456'
+        self.message_type = message_type.value.to_bytes(1, byteorder='big')
+        self.election_id = b'\x00\x12\x12\x13\x11\x11\x08\x07\x11\x13\x05\x04\x06\x11\x14\x15'
         self.collector_index = collector_index
-        self.pk_length = 15
+        self.pk_length = b'\x00' * 4
         self.pk = 'my public key'
-        self.collector_key_hash = 'my collector key hash'
+        self.collector_key_hash = b'\x04' * 64
     
     def to_bytes(self):
-        message_bytes = str(self.message_type.value).encode()
-        message_bytes += ",".encode()
-        message_bytes += self.election_ID.encode()
-        message_bytes += ",".encode()
-        message_bytes += str(self.collector_index).encode()
-        message_bytes += ",".encode()
-        message_bytes += str(self.pk_length).encode()
-        message_bytes += ",".encode()
-        message_bytes += self.pk.encode()
-        message_bytes += ",".encode()
-        message_bytes += self.collector_key_hash.encode()
-        return message_bytes
+        return self.message_type + ','.encode() + self.election_id + ','.encode() + self.collector_index + \
+        ','.encode() + self.pk_length + ','.encode() + self.pk.encode() + ','.encode() + self.collector_key_hash
+
+import socket
+
+class Metadata_Message:
+    def __init__(self, message_type, port):
+        self.message_type = message_type.value.to_bytes(1, byteorder='big')
+        self.election_id = b'\x00\x12\x12\x13\x11\x11\x08\x07\x11\x13\x05\x04\x06\x11\x14\x15'
+        self.c_host_length = len(socket.gethostbyname('localhost')).to_bytes(4, byteorder='big')
+        self.c_host = socket.gethostbyname('localhost').encode()
+        self.c_port = port.to_bytes(2, byteorder='big')
+        self.c_pk_length = b'\x00' * 4
+        self.c_pk = 'my public key'.encode()
+        # m is number of candidates
+        self.m = b'\x05'
     
-    @classmethod
-    def from_byte(cls, message_bytes):
-        message_type = int.from_bytes(message_bytes[:1], byteorder='big')
-        election_ID = message_bytes[1:17]
-        collector_index = int.from_bytes(message_bytes[17:18], byteorder='big')
-        pk_length = int.from_bytes(message_bytes[18:22], byteorder='big')
-        pk = message_bytes[22:22+pk_length]
-        collector_key_hash = message_bytes[22+pk_length:]
-        return cls(message_type, election_ID, collector_index, pk_length, pk, collector_key_hash)
+    def to_bytes(self):
+        return self.message_type + ','.encode() + self.election_id + ','.encode() + self.c_host_length + \
+        ','.encode() + self.c_host + ','.encode() + self.c_port + ','.encode() + self.c_pk_length + \
+        ','.encode() + self.c_pk + ','.encode() + self.m
