@@ -1,21 +1,24 @@
 class Admin_Message:
-    def __init__(self,message_type,election_ID,collector_index,pk_length,pk,collector_key_hash):
+    def __init__(self, message_type, collector_index):
         self.message_type = message_type
-        self.election_ID = election_ID
+        self.election_ID = '1234567890123456'
         self.collector_index = collector_index
-        self.pk_length = pk_length
-        self.pk = pk
-        self.collector_key_hash = collector_key_hash
+        self.pk_length = 15
+        self.pk = 'my public key'
+        self.collector_key_hash = 'my collector key hash'
     
     def to_bytes(self):
-        message_bytes = b''
-        message_bytes += len(self.message_type).to_bytes(1, byteorder='big')
-        message_bytes += self.message_type.encode('utf-8')
-        message_bytes += self.election_ID.encode('utf-8')
-        message_bytes += self.collector_index.to_bytes(1, byteorder='big')
-        message_bytes += self.pk_length.to_bytes(4, byteorder='big')
-        message_bytes += self.pk.encode('utf-8')
-        message_bytes += self.collector_key_hash.encode('utf-8')
+        message_bytes = str(self.message_type.value).encode()
+        message_bytes += ",".encode()
+        message_bytes += self.election_ID.encode()
+        message_bytes += ",".encode()
+        message_bytes += str(self.collector_index).encode()
+        message_bytes += ",".encode()
+        message_bytes += str(self.pk_length).encode()
+        message_bytes += ",".encode()
+        message_bytes += self.pk.encode()
+        message_bytes += ",".encode()
+        message_bytes += self.collector_key_hash.encode()
         return message_bytes
     
     @classmethod

@@ -25,9 +25,6 @@ class Client:
         Then, send the actual message
         """
         encoded_message = str(message).encode(self.format)
-        message_length = str(len(encoded_message)).encode(self.format)
-        message_length += b' ' * (self.header - len(message_length))
-        self.sock.send(message_length)
         self.sock.send(encoded_message)
     
     def get_shares(self):

@@ -1,9 +1,9 @@
 class Collector_Message:
-    def __init__(self, message_type, key_hash, election_ID, acceptance):
+    def __init__(self, message_type):
         self.message_type = message_type
-        self.key_hash = key_hash
-        self.election_ID = election_ID
-        self.acceptance = acceptance
+        self.key_hash = b'\x00'*64
+        self.election_ID = '1234567890123456'
+        self.acceptance = 1
 
     @classmethod
     def from_bytes(cls, message_bytes):
@@ -14,8 +14,11 @@ class Collector_Message:
         return cls(message_type, key_hash, election_ID, acceptance)
 
     def to_bytes(self):
-        message_bytes = len(self.message_type).to_bytes(1, byteorder='big')
-        message_bytes += self.key_hash
-        message_bytes += self.election_ID
-        message_bytes += self.acceptance.to_bytes(1, byteorder='big')
+        message_bytes = str(self.message_type.value).encode()
+        message_bytes += ",".encode()
+        message_bytes += str(self.key_hash).encode()
+        message_bytes += ",".encode()
+        message_bytes += self.election_ID.encode()
+        message_bytes += ",".encode()
+        message_bytes += str(self.acceptance).encode()
         return message_bytes

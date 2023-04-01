@@ -1,0 +1,8 @@
+from enum import Enum
+
+class MESSAGE(Enum):
+    DISCONNECT = 1
+    CALCULATE_BALLOT = 2
+    GENERATE_SHARES = 3
+    COLLECT_REQUEST = 4
+    COLLECT_STATUS = 5
