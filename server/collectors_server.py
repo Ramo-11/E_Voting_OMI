@@ -11,7 +11,7 @@ sys.path.insert(0, ROOT_DIR)
 from utils.messages import collector_message
 from utils.messages.collector_message import Collector_Message
 from utils import Message_Type
-from parent_server import Server
+from server.server import Server
 
 class Collector_Server(Server):
     def __init__(self, port=3002):
@@ -26,18 +26,35 @@ class Collector_Server(Server):
         self.other_c_port = None
         self.other_c_pk_length = None
         self.other_c_pk = None
+        self.other_collector_sock = None
         self.m = None
         self.x = 0
         self.x_prime = 0
 
+    def start(self):
+        print('Starting Collector Server')
+
+        self.client_sock.bind((self.server, self.port))
+        self.client_sock.listen()
+        print(f'Server is listening on {self.server}, port {self.port}')
+        while True:
+            client, address = self.client_sock.accept()
+            print('Connection from: {}'.format(str(address)))
+            self.thread = threading.Thread(target=self.listen_to_client, args=(client, address))
+            self.thread.start()
+
     def listen_to_client(self, client, address):
         connected = True
         while connected:
-            message = client.recv(int(self.length))
+            try:
+                message = client.recv(int(self.length))
+            except:
+                break
             message_type = str(int.from_bytes(message.split(b',')[0], byteorder='big'))
+            if message == b'':
+                continue
             print(f'Message received from client: {message}')
             if message_type == '1':
-                print(f'Connection closed with client: {address}')
                 connected = False
             elif message_type == '3':
                 encoded_list = [str(s) for s in self.generate_random_shares()]
@@ -50,7 +67,7 @@ class Collector_Server(Server):
                 self.pk_length = message_parts[3]
                 self.pk = message_parts[4]
                 self.key_hash = message_parts[5]
-                collector_message = Collector_Message(Message_Type.MESSAGE.COLLECT_STATUS, self.election_id)
+                collector_message = Collector_Message(self.election_id)
                 collector_message = collector_message.to_bytes()
                 client.send(collector_message)
             elif message_type == '6':
@@ -61,10 +78,25 @@ class Collector_Server(Server):
                 self.other_c_pk_length = message_parts[5]
                 self.other_c_pk = message_parts[6]
                 print(f'host on port {self.port} received information about the other host on port {self.other_c_port}')
+                self.connect_to_other_collector()
+            elif message_type == '10':
+                print(f'Got the voters ID, need to store them and verify, but that is for next week')
+                connected = False
             else:
                 print(f'Invalid message received from client: {address}')
                 connected = False
         client.close()
+        print(f'Connection closed with client: {address}')
+
+    def connect_to_other_collector(self):
+        self.other_collector_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.other_collector_sock.connect((self.other_c_host, self.other_c_port))
+        print("Collector 2 connected to collector 1")
+        self.send_message_to_other_collector(b'\x07')
+
+    def send_message_to_other_collector(self, message):
+        print(f'message to be sent to other collector: {message}')
+        self.other_collector_sock.sendall(message)
 
     def construct_collector_message(self):
         message = collector_message.Collector_Message()

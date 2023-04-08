@@ -1,7 +1,7 @@
 import socket
 import threading
 import sys
-import random
+import time
 import os
 import sys
 
@@ -21,16 +21,7 @@ class Server:
         self.format = 'utf-8'
 
     def start(self):
-        print('Starting Server')
-
-        self.client_sock.bind((self.server, self.port))
-        self.client_sock.listen()
-        print(f'Server is listening on {self.server}, port {self.port}')
-        while True:
-            client, address = self.client_sock.accept()
-            print('Connection from: {}'.format(str(address)))
-            self.thread = threading.Thread(target=self.listen_to_client, args=(client, address))
-            self.thread.start()
+        pass
 
     def is_socket_connected(self, sock):
         try:
@@ -39,9 +30,10 @@ class Server:
             return False
         return True
 
-    def connect(self, port=3001):
+    def connect(self, port):
         # if the socket doesn't exists and is not connected, connect
         if not self.server_socket or not self.is_socket_connected(self.server_socket):
+            print(f'Created new server socket')
             self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.server_socket.connect((self.server, int(port)))
         else:
@@ -50,12 +42,13 @@ class Server:
     def close_connection(self):
         disconnect_message = Message_Type.MESSAGE.DISCONNECT.value.to_bytes(1, byteorder='big')
         self.send_message(disconnect_message)
+        time.sleep(0.1)
         self.server_socket.close()
         print('Connection closed.')
 
     def send_message(self, message):
         print(f'message to be sent: {message}')
-        self.server_socket.send(message)
+        self.server_socket.sendall(message)
 
     def receive_message(self):
         self.server_socket.settimeout(10)
