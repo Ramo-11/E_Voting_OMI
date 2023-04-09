@@ -26,20 +26,21 @@ class Admin_Server(Server):
         self.ballots_prime = 0
 
     def start(self):
-        print('Starting Admin Server')
+        print('\nStarting Admin Server\n')
 
         self.client_sock.bind((self.server, self.port))
         self.client_sock.listen()
         print(f'Server is listening on {self.server}, port {self.port}')
         while True:
             client, address = self.client_sock.accept()
-            print('Connection from: {}'.format(str(address)))
             self.conn_num += 1
+            print(f'Connection from: {str(address)}.\nNumber of connections = {self.conn_num}')
             self.thread = threading.Thread(target=self.listen_to_client, args=(client, address))
             self.thread.start()
-            if self.conn_num == 2:
-                self.thread.join()
-                self.send_info_to_collectoor()
+            if self.conn_num == 3:
+                break
+        self.thread.join()
+        self.send_info_to_collectoor()
             
 
     def send_info_to_collectoor(self):
@@ -47,12 +48,14 @@ class Admin_Server(Server):
         # admin now sends the metadata to all collectors
         admin_message = Voters_Information(self.voter_ids[0], self.voter_ids[1], self.voter_ids[2])
         admin_message = admin_message.to_bytes()
-
+        
         self.connect(port=3001)
         self.send_message(admin_message)
+        self.close_connection()
 
         self.connect(port=3002)
         self.send_message(admin_message)
+        self.close_connection()
 
     def listen_to_client(self, client, address):
         connected = True
@@ -78,6 +81,7 @@ class Admin_Server(Server):
                 self.voter_ids.append(message_parts[2])
                 message = Voter_Registration_Response()
                 client.send(message.to_bytes())
+                break
         client.close()
         print(f'Connection closed with client: {address}')
             
@@ -97,3 +101,4 @@ class Admin_Server(Server):
             print(f'total ballots prime: {self.ballots_prime}')
         else:
             print(f'current ballots: {self.ballots}. Waiting on other votes')
+        
