@@ -77,8 +77,8 @@ class Admin_Server(Server):
                     print(f'user {username} has been signed in')
             if message_type == '8':
                 message_parts = message.split(b',')
-                self.key_hashes.append(message_parts[1])
-                self.voter_ids.append(message_parts[2])
+                self.key_hashes.append(message_parts[2])
+                self.voter_ids.append(message_parts[3])
                 message = Voter_Registration_Response()
                 client.send(message.to_bytes())
                 break

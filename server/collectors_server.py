@@ -4,13 +4,12 @@ import sys
 import random
 import os
 import sys
+import time
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, ROOT_DIR)
 
-from utils.messages import collector_message
-from utils.messages.collector_message import Collector_Message
-from utils import Message_Type
+from utils.messages.collector_message import Collector_Message, Voter_Location
 from server.server import Server
 
 class Collector_Server(Server):
@@ -79,8 +78,31 @@ class Collector_Server(Server):
                 self.other_c_pk = message_parts[6]
                 print(f'host on port {self.port} received information about the other host on port {self.other_c_port}')
                 self.connect_to_other_collector()
+
+            elif message_type == '8':
+                # verify voter ID is the same as the one obtained from admin, then voter is officially registered with this collector
+                message_parts = message.split(b',')
+                voter_id = message_parts[3]
+                if not hasattr(self, 'voter1_id') or not hasattr(self, 'voter2_id') or not hasattr(self, 'voter3_id'):
+                    try: 
+                        if voter_id == self.voter1_id or voter_id == self.voter2_id or voter_id == self.voter3_id:
+                            print(f'Verified voter ID: {voter_id}, voter is now registered')
+                            message = Voter_Location()
+                            self.send_message(message.to_bytes())
+                    except:
+                        print(f'Verification period ended, did not get voter Ids from Admin')
+                else:
+                    print(f'Verification failed, voter ID: {voter_id} is not registered with this collector')
+                connected = False
+                
+            # receive voters information from admin
             elif message_type == '10':
-                print(f'Got the voters ID, need to store them and verify, but that is for next week')
+                message_parts = message.split(b',')
+                self.N = message_parts[2]
+                self.voter1_id = message_parts[3]
+                self.voter2_id = message_parts[4]
+                self.voter3_id = message_parts[5]
+                print(f'Got the voters IDs from admin')
                 connected = False
             else:
                 print(f'Invalid message received from client: {address}')
@@ -97,10 +119,6 @@ class Collector_Server(Server):
     def send_message_to_other_collector(self, message):
         print(f'message to be sent to other collector: {message}')
         self.other_collector_sock.sendall(message)
-
-    def construct_collector_message(self):
-        message = collector_message.Collector_Message()
-        return message.to_bytes()
 
     def generate_random_shares(self):
         random.seed(self.port)

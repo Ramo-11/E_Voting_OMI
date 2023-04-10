@@ -12,8 +12,9 @@ class Voter_Signin_Message:
 class Voter_Registration_Message:
     def __init__(self, voter_id):
         self.message_type = MESSAGE.VOTER_REGISTRATION.value.to_bytes(1, byteorder='big')
+        self.election_id = b'\x00\x12\x12\x13\x11\x11\x08\x07\x11\x13\x05\x04\x06\x11\x14\x15'
         self.key_hash = b'\x00' * 64
         self.voter_id = voter_id
 
     def to_bytes(self):
-        return self.message_type + ','.encode() + self.key_hash + ','.encode() + self.voter_id
+        return self.message_type + ','.encode() + self.election_id + ','.encode() + self.key_hash + ','.encode() + self.voter_id

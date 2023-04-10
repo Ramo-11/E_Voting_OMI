@@ -40,4 +40,14 @@ if __name__ == '__main__':
     # Admin now acts as a server and listens to connections from voters
     admin.start()
 
-    
+    admin.connect(port=3001)
+    admin_message = Voters_Information(admin.voter_ids[0], admin.voter_ids[1], admin.voter_ids[2])
+    admin_message = admin_message.to_bytes()
+    admin.send_message(admin_message)
+    admin.close_connection()
+
+    admin.connect(port=3002)
+    admin_message = Voters_Information(admin.voter_ids[0], admin.voter_ids[1], admin.voter_ids[2])
+    admin_message = admin_message.to_bytes()
+    admin.send_message(admin_message)
+    admin.close_connection()

@@ -11,16 +11,17 @@ from utils.messages.voter_messages import Voter_Signin_Message, Voter_Registrati
 from utils.Message_Type import MESSAGE
 from client.client import Client
 
-voter2 = Client()
+voter2 = Client(b'\x02' * 4)
 voter2.start(port=3003)
 
 # sign in
 signin_message = Voter_Signin_Message('user2', 'bbbb')
 voter2.send_message(signin_message.to_bytes())
 
-voter_id = b'\x02' * 4
-voter_reigstration_message = Voter_Registration_Message(voter_id)
+# send registration request to admin
+voter_reigstration_message = Voter_Registration_Message(voter2.id)
 voter2.send_message(voter_reigstration_message.to_bytes())
+
 voter2.receive_message()
 
 # if __name__ == '__main__':

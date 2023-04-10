@@ -2,9 +2,10 @@ import socket
 import time
 
 from utils import Message_Type
+from utils.messages.voter_messages import Voter_Registration_Message
 
 class Client:
-    def __init__(self):
+    def __init__(self, id):
         # self.voting_vector = {
         #     "What is the best CS class?": ["240", "555", "511"],
         #     "What is the hardest homework in CSCI 55500?": ["H1", "H2", "H3"],
@@ -14,7 +15,7 @@ class Client:
         self.header = 64
         self.format = 'utf-8'
         self.length = 1000
-        # self.location = location
+        self.id = id
         self.sock = None
     
     def start(self, port):
@@ -43,12 +44,20 @@ class Client:
         print('Connection closed.')
 
     def receive_message(self):
-        self.sock.settimeout(10)
-        message = self.sock.recv(int(self.length))
+        self.sock.settimeout(60)
+        try:
+            message = self.sock.recv(int(self.length))
+        except:
+            print('No message received within 10 seconds')
+            return
         print(f'\nmessage received: {message}')
         message_type = int.from_bytes(message.split(b',')[0], byteorder='big')
+        # receive collectors information from the admin
         if message_type == Message_Type.MESSAGE.METADATA_VOTER.value:
             self.extract_message(message)
+            self.connect_with_collectors()
+        if message_type == Message_Type.MESSAGE.VOTER_LOCATION.value:
+            print(f'GOT MESSAGE FROM COLLECTOR YAY')
         return message
     
     def extract_message(self, message):
@@ -59,10 +68,17 @@ class Client:
         self.c1_pk_length = message_parts[5].decode()
         self.c1_pk= message_parts[6].decode()
         self.c2_host = message_parts[8].decode()
-        self.c2_port = int.from_bytes(message_parts[4], byteorder='big')
+        self.c2_port = int.from_bytes(message_parts[9], byteorder='big')
         self.c2_pk_length = message_parts[10].decode()
         self.c2_pk = message_parts[11].decode()
         self.m = message_parts[12].decode()
+
+    def connect_with_collectors(self):
+        self.start(self.c2_port)
+        message = Voter_Registration_Message(self.id)
+        self.send_message(message.to_bytes())
+        self.receive_message()
+        # self.start(self.c2_port)
 
     def start_voting(self):
         print(list(self.voting_vector.keys())[0])
