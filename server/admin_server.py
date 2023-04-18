@@ -26,15 +26,13 @@ class Admin_Server(Server):
         self.ballots_prime = 0
 
     def start(self):
-        print('\nStarting Admin Server\n')
-
         self.client_sock.bind((self.server, self.port))
         self.client_sock.listen()
-        print(f'Server is listening on {self.server}, port {self.port}')
+        print(f'\nServer is listening on {self.server}, port {self.port}')
         while True:
             client, address = self.client_sock.accept()
             self.conn_num += 1
-            print(f'Connection from: {str(address)}.\nNumber of connections = {self.conn_num}')
+            print(f'\nConnection from: {str(address)}.\nNumber of connections = {self.conn_num}')
             self.thread = threading.Thread(target=self.listen_to_client, args=(client, address))
             self.thread.start()
             if self.conn_num == 3:
@@ -70,17 +68,20 @@ class Admin_Server(Server):
             if message_type == '1':
                 connected = False
             if message_type == '7':
+                print(f'\nAdmin received voter\'s sign in request')
                 message_parts = message.split(b',')
                 username = message_parts[1].decode()
                 password = message_parts[2].decode()
                 if self.is_user_valid(username, password):
                     print(f'user {username} has been signed in')
             if message_type == '8':
+                print(f'\nAdmin received voter\'s registration request')
                 message_parts = message.split(b',')
                 self.key_hashes.append(message_parts[2])
                 self.voter_ids.append(message_parts[3])
                 message = Voter_Registration_Response()
                 client.send(message.to_bytes())
+                print(f'Admin sent voter\'s collectors inforamtion\n')
                 break
         client.close()
         print(f'Connection closed with client: {address}')

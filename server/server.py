@@ -33,7 +33,7 @@ class Server:
     def connect(self, port):
         # if the socket doesn't exists and is not connected, connect
         if not self.server_socket or not self.is_socket_connected(self.server_socket):
-            print(f'Created new server socket')
+            print(f'\nCreated new server socket')
             self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.server_socket.connect((self.server, int(port)))
         else:
@@ -47,13 +47,11 @@ class Server:
         print('Connection closed.')
 
     def send_message(self, message):
-        print(f'message to be sent: {message}')
         self.server_socket.sendall(message)
 
     def receive_message(self):
         self.server_socket.settimeout(10)
         message = self.server_socket.recv(int(self.length))
-        print(f'message received: {message}')
         return message
     
     def listen_to_client(self, client, address):

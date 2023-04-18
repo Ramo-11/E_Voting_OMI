@@ -4,7 +4,6 @@ import sys
 import random
 import os
 import sys
-import time
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, ROOT_DIR)
@@ -31,14 +30,12 @@ class Collector_Server(Server):
         self.x_prime = 0
 
     def start(self):
-        print('Starting Collector Server')
-
         self.client_sock.bind((self.server, self.port))
         self.client_sock.listen()
-        print(f'Server is listening on {self.server}, port {self.port}')
+        print(f'\nServer is listening on {self.server}, port {self.port}\n')
         while True:
             client, address = self.client_sock.accept()
-            print('Connection from: {}'.format(str(address)))
+            print(f'\nConnection from: {str(address)}')
             self.thread = threading.Thread(target=self.listen_to_client, args=(client, address))
             self.thread.start()
 
@@ -52,7 +49,6 @@ class Collector_Server(Server):
             message_type = str(int.from_bytes(message.split(b',')[0], byteorder='big'))
             if message == b'':
                 continue
-            print(f'Message received from client: {message}')
             if message_type == '1':
                 connected = False
             elif message_type == '3':
@@ -60,6 +56,7 @@ class Collector_Server(Server):
                 final_shares = encoded_list[0] + "," + encoded_list[1]
                 client.send(final_shares.encode(self.format))
             elif message_type == '4':
+                print(f'\nReceived Registration Message from admin')
                 message_parts = message.split(b',')
                 self.election_id = message_parts[1]
                 self.index = message_parts[2]
@@ -69,16 +66,17 @@ class Collector_Server(Server):
                 collector_message = Collector_Message(self.election_id)
                 collector_message = collector_message.to_bytes()
                 client.send(collector_message)
+                print(f'\nSent acceptance response to admin')
             elif message_type == '6':
+                print(f'\nReceived information about the second collector from admin')
                 message_parts = message.split(b',')
                 self.other_c_host_length = message_parts[2]
                 self.other_c_host = message_parts[3].decode('utf-8')
                 self.other_c_port = int.from_bytes(message_parts[4], byteorder='big')
                 self.other_c_pk_length = message_parts[5]
                 self.other_c_pk = message_parts[6]
-                print(f'host on port {self.port} received information about the other host on port {self.other_c_port}')
+                # print(f'\nhost on port {self.port} received information about the other host on port {self.other_c_port}')
                 self.connect_to_other_collector()
-
             elif message_type == '8':
                 # verify voter ID is the same as the one obtained from admin, then voter is officially registered with this collector
                 message_parts = message.split(b',')
@@ -105,20 +103,20 @@ class Collector_Server(Server):
                 print(f'Got the voters IDs from admin')
                 connected = False
             else:
-                print(f'Invalid message received from client: {address}')
+                print(f'\nreceived unknown message from client, the message: {message}\n')
                 connected = False
         client.close()
-        print(f'Connection closed with client: {address}')
+        print(f'\nConnection closed with client: {address}')
 
     def connect_to_other_collector(self):
         self.other_collector_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.other_collector_sock.connect((self.other_c_host, self.other_c_port))
-        print("Collector 2 connected to collector 1")
+        print('\nCollector 2 connected to collector 1')
         self.send_message_to_other_collector(b'\x07')
 
     def send_message_to_other_collector(self, message):
-        print(f'message to be sent to other collector: {message}')
         self.other_collector_sock.sendall(message)
+        print(f'\nsent message to collector 1')
 
     def generate_random_shares(self):
         random.seed(self.port)
