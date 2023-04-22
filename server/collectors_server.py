@@ -4,6 +4,7 @@ import sys
 import random
 import os
 import sys
+import time
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, ROOT_DIR)
@@ -12,8 +13,8 @@ from utils.messages.collector_message import Collector_Message, Voter_Location
 from server.server import Server
 
 class Collector_Server(Server):
-    def __init__(self, port=3002):
-        super().__init__(port)
+    def __init__(self, name, port=3002):
+        super().__init__(name, port)
         self.index = None
         self.election_id = None
         self.pk_length = None
@@ -28,6 +29,9 @@ class Collector_Server(Server):
         self.m = None
         self.x = 0
         self.x_prime = 0
+        self.voter_1_registrered = False
+        self.voter_2_registrered = False
+        self.voter_3_registrered = False
 
     def start(self):
         self.client_sock.bind((self.server, self.port))
@@ -56,57 +60,66 @@ class Collector_Server(Server):
                 final_shares = encoded_list[0] + "," + encoded_list[1]
                 client.send(final_shares.encode(self.format))
             elif message_type == '4':
-                print(f'\nReceived Registration Message from admin')
-                message_parts = message.split(b',')
-                self.election_id = message_parts[1]
-                self.index = message_parts[2]
-                self.pk_length = message_parts[3]
-                self.pk = message_parts[4]
-                self.key_hash = message_parts[5]
-                collector_message = Collector_Message(self.election_id)
-                collector_message = collector_message.to_bytes()
-                client.send(collector_message)
-                print(f'\nSent acceptance response to admin')
+                self.registration_message_received(message, client)
             elif message_type == '6':
-                print(f'\nReceived information about the second collector from admin')
-                message_parts = message.split(b',')
-                self.other_c_host_length = message_parts[2]
-                self.other_c_host = message_parts[3].decode('utf-8')
-                self.other_c_port = int.from_bytes(message_parts[4], byteorder='big')
-                self.other_c_pk_length = message_parts[5]
-                self.other_c_pk = message_parts[6]
-                # print(f'\nhost on port {self.port} received information about the other host on port {self.other_c_port}')
-                self.connect_to_other_collector()
+                self.collector_information_received(message)
             elif message_type == '8':
-                # verify voter ID is the same as the one obtained from admin, then voter is officially registered with this collector
-                message_parts = message.split(b',')
-                voter_id = message_parts[3]
-                if not hasattr(self, 'voter1_id') or not hasattr(self, 'voter2_id') or not hasattr(self, 'voter3_id'):
-                    try: 
-                        if voter_id == self.voter1_id or voter_id == self.voter2_id or voter_id == self.voter3_id:
-                            print(f'Verified voter ID: {voter_id}, voter is now registered')
-                            message = Voter_Location()
-                            self.send_message(message.to_bytes())
-                    except:
-                        print(f'Verification period ended, did not get voter Ids from Admin')
-                else:
-                    print(f'Verification failed, voter ID: {voter_id} is not registered with this collector')
+                # voters will send us this message which will contain their id
+                self.verify_voters_information(message)
                 connected = False
-                
-            # receive voters information from admin
             elif message_type == '10':
-                message_parts = message.split(b',')
-                self.N = message_parts[2]
-                self.voter1_id = message_parts[3]
-                self.voter2_id = message_parts[4]
-                self.voter3_id = message_parts[5]
-                print(f'Got the voters IDs from admin')
+                # admin will send us this message which will contain the voters ids
+                self.voters_information_received(message)
                 connected = False
             else:
                 print(f'\nreceived unknown message from client, the message: {message}\n')
                 connected = False
         client.close()
         print(f'\nConnection closed with client: {address}')
+
+    def registration_message_received(self, message, client):
+        print(f'\nReceived Registration Message from admin')
+        message_parts = message.split(b',')
+        self.election_id = message_parts[1]
+        self.index = message_parts[2]
+        self.pk_length = message_parts[3]
+        self.pk = message_parts[4]
+        self.key_hash = message_parts[5]
+        collector_message = Collector_Message(self.election_id)
+        collector_message = collector_message.to_bytes()
+        client.send(collector_message)
+        print(f'Sent acceptance response to admin')
+
+    def collector_information_received(self, message):
+        print(f'\nReceived information about the second collector from admin')
+        message_parts = message.split(b',')
+        self.other_c_host_length = message_parts[2]
+        self.other_c_host = message_parts[3].decode('utf-8')
+        self.other_c_port = int.from_bytes(message_parts[4], byteorder='big')
+        self.other_c_pk_length = message_parts[5]
+        self.other_c_pk = message_parts[6]
+        self.connect_to_other_collector()
+
+    def verify_voters_information(self, message):
+        # verify voter ID is the same as the one obtained from admin, then voter is officially registered with this collector
+        message_parts = message.split(b',')
+        voter_id = message_parts[3]
+        start_time = time.time()
+        if hasattr(self, 'voter1_id') and hasattr(self, 'voter2_id') and hasattr(self, 'voter3_id'):
+            if voter_id == self.voter1_id or voter_id == self.voter2_id or voter_id == self.voter3_id:
+                print(f'All voters have been registered with collector {self.name}')
+                return
+            print(f'voters ids mismatch')
+        else:
+            print(f'do not have all voters ids yet')
+
+    def voters_information_received(self, message):
+        print(f'\nGot the voters IDs from admin')
+        message_parts = message.split(b',')
+        self.N = message_parts[2]
+        self.voter1_id = message_parts[3]
+        self.voter2_id = message_parts[4]
+        self.voter3_id = message_parts[5]
 
     def connect_to_other_collector(self):
         self.other_collector_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -116,7 +129,7 @@ class Collector_Server(Server):
 
     def send_message_to_other_collector(self, message):
         self.other_collector_sock.sendall(message)
-        print(f'\nsent message to collector 1')
+        print(f'\nsent message to other collector')
 
     def generate_random_shares(self):
         random.seed(self.port)

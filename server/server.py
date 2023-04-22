@@ -12,7 +12,8 @@ from utils.messages import admin_message
 from utils import Message_Type
 
 class Server:
-    def __init__(self, port):
+    def __init__(self, name, port):
+        self.name = name
         self.port = port
         self.server = socket.gethostbyname('localhost')
         self.client_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -33,7 +34,6 @@ class Server:
     def connect(self, port):
         # if the socket doesn't exists and is not connected, connect
         if not self.server_socket or not self.is_socket_connected(self.server_socket):
-            print(f'\nCreated new server socket')
             self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.server_socket.connect((self.server, int(port)))
         else:
@@ -44,7 +44,7 @@ class Server:
         self.send_message(disconnect_message)
         time.sleep(0.1)
         self.server_socket.close()
-        print('Connection closed.')
+        print('Connection closed with server.')
 
     def send_message(self, message):
         self.server_socket.sendall(message)

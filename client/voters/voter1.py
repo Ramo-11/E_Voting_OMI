@@ -14,10 +14,12 @@ voter1 = Client(b'\x01' * 4)
 voter1.start(port=3003)
 
 # send sign in request to admin
+print(f'\nSending sign in request to admin')
 signin_message = Voter_Signin_Message('user1', 'aaaa')
 voter1.send_message(signin_message.to_bytes())
 
 # send registration request to admin
+print(f'\nSending registration request to admin')
 voter_reigstration_message = Voter_Registration_Message(voter1.id)
 voter1.send_message(voter_reigstration_message.to_bytes())
 

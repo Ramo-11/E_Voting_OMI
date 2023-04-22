@@ -18,3 +18,12 @@ class Voter_Registration_Message:
 
     def to_bytes(self):
         return self.message_type + ','.encode() + self.election_id + ','.encode() + self.key_hash + ','.encode() + self.voter_id
+    
+
+# this message is responsible for request the collectors information again
+class Voter_Heartbeat_Message:
+    def __init__(self):
+        self.message_type = MESSAGE.VOTER_HEARTBEAT.value.to_bytes(1, byteorder='big')
+
+    def to_bytes(self):
+        return self.message_type
