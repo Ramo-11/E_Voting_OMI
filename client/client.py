@@ -2,7 +2,7 @@ import socket
 import time
 
 from utils import Message_Type
-from utils.messages.voter_messages import Voter_Registration_Message
+from utils.messages.voter_messages import Voter_Registration_Message, Voter_Heartbeat_Message
 
 class Client:
     def __init__(self, id):
@@ -23,7 +23,6 @@ class Client:
         self.sock.connect((self.server, int(port)))
 
     def send_message(self, message):
-        print(f'message to be sent: {message}')
         time.sleep(0.1)
         self.sock.sendall(message)
     
@@ -44,16 +43,21 @@ class Client:
         print('Connection closed.')
 
     def receive_message(self):
-        self.sock.settimeout(60)
+        timeout = 10
+        self.sock.settimeout(timeout)
         try:
             message = self.sock.recv(int(self.length))
+            while message == b'':
+                message = self.sock.recv(int(self.length))
         except:
-            print('No message received within 10 seconds')
-            return
-        print(f'\nmessage received: {message}')
+            print(f'No message received within {timeout} seconds, trying again...')
+            voter_heartbeat_message = Voter_Heartbeat_Message()
+            self.send_message(voter_heartbeat_message.to_bytes())
+            self.receive_message()
         message_type = int.from_bytes(message.split(b',')[0], byteorder='big')
         # receive collectors information from the admin
         if message_type == Message_Type.MESSAGE.METADATA_VOTER.value:
+            print(f'Received collectors information')
             self.extract_message(message)
             self.connect_with_collectors()
         if message_type == Message_Type.MESSAGE.VOTER_LOCATION.value:
@@ -74,11 +78,11 @@ class Client:
         self.m = message_parts[12].decode()
 
     def connect_with_collectors(self):
+        print(f'\nEstablishing a connection with collector 2 and sending it registration request')
         self.start(self.c2_port)
         message = Voter_Registration_Message(self.id)
         self.send_message(message.to_bytes())
         self.receive_message()
-        # self.start(self.c2_port)
 
     def start_voting(self):
         print(list(self.voting_vector.keys())[0])
