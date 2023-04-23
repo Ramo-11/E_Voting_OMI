@@ -8,11 +8,14 @@ import sys
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, ROOT_DIR)
 
-from utils.messages import admin_message
 from utils import Message_Type
+from utils import Paillier
 
 class Server:
     def __init__(self, name, port):
+        p = Paillier.initialize_paillier()
+        self.pk = p.get_pubkey()
+        self.pk_length = p.get_keylength()
         self.name = name
         self.port = port
         self.server = socket.gethostbyname('localhost')

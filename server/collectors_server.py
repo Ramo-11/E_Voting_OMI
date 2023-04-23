@@ -29,9 +29,7 @@ class Collector_Server(Server):
         self.m = None
         self.x = 0
         self.x_prime = 0
-        self.voter_1_registrered = False
-        self.voter_2_registrered = False
-        self.voter_3_registrered = False
+        self.conn_num = 0
 
     def start(self):
         self.client_sock.bind((self.server, self.port))
@@ -64,6 +62,10 @@ class Collector_Server(Server):
             elif message_type == '6':
                 self.collector_information_received(message)
             elif message_type == '8':
+                if self.conn_num == 3:
+                    print(f'\nAll voters have been registered with this collector')
+                    self.perform_LAS()
+                    return
                 # voters will send us this message which will contain their id
                 self.verify_voters_information(message)
                 connected = False
@@ -75,7 +77,7 @@ class Collector_Server(Server):
                 print(f'\nreceived unknown message from client, the message: {message}\n')
                 connected = False
         client.close()
-        print(f'\nConnection closed with client: {address}')
+        print(f'Connection closed with client: {address}')
 
     def registration_message_received(self, message, client):
         print(f'\nReceived Registration Message from admin')
@@ -102,12 +104,15 @@ class Collector_Server(Server):
 
     def verify_voters_information(self, message):
         # verify voter ID is the same as the one obtained from admin, then voter is officially registered with this collector
+        if self.conn_num == 3:
+            print(f'\nAll voters have been registered with this collector')
+            return
+        self.conn_num += 1
         message_parts = message.split(b',')
         voter_id = message_parts[3]
-        start_time = time.time()
         if hasattr(self, 'voter1_id') and hasattr(self, 'voter2_id') and hasattr(self, 'voter3_id'):
             if voter_id == self.voter1_id or voter_id == self.voter2_id or voter_id == self.voter3_id:
-                print(f'All voters have been registered with collector {self.name}')
+                print(f'voter with id {voter_id} has been registered')
                 return
             print(f'voters ids mismatch')
         else:
@@ -142,3 +147,6 @@ class Collector_Server(Server):
         self.x_prime = (random_nums[1])
 
         return [self.x, self.x_prime]
+
+    def perform_LAS(self):
+        pass
