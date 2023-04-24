@@ -1,7 +1,7 @@
 import random
 import math
 
-import Crypto.Util.number as number
+from Crypto.Util import number
 
 class Paillier:
     pubkey = None

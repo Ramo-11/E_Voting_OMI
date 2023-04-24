@@ -12,7 +12,7 @@ from utils import Message_Type
 from utils import Paillier
 
 class Server:
-    def __init__(self, name, port):
+    def __init__(self, name, logger, port):
         p = Paillier.initialize_paillier()
         self.pk = p.get_pubkey()
         self.pk_length = p.get_keylength()
@@ -23,6 +23,7 @@ class Server:
         self.server_socket = None
         self.length = 1000
         self.format = 'utf-8'
+        self.logger = logger
 
     def start(self):
         pass
@@ -39,15 +40,16 @@ class Server:
         if not self.server_socket or not self.is_socket_connected(self.server_socket):
             self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.server_socket.connect((self.server, int(port)))
+            self.logger.info(f'Connected to server on port {port}')
         else:
-            print('Socket is already connected')
+            self.logger.error('Socket is already connected')
 
     def close_connection(self):
         disconnect_message = Message_Type.MESSAGE.DISCONNECT.value.to_bytes(1, byteorder='big')
         self.send_message(disconnect_message)
         time.sleep(0.1)
         self.server_socket.close()
-        print('Connection closed with server.')
+        self.logger.info('Connection closed with server.')
 
     def send_message(self, message):
         self.server_socket.sendall(message)

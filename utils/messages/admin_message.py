@@ -3,11 +3,11 @@ from utils import Paillier
 
 class Registration_Message:
     def __init__(self, collector_index, pk, pk_length):
-        self.message_type = MESSAGE.COLLECT_REQUEST.value.to_bytes(1, byteorder='big')
+        self.message_type = MESSAGE.COLLECTOR_REGISTRATION.value.to_bytes(1, byteorder='big')
         self.election_id = b'\x00\x12\x12\x13\x11\x11\x08\x07\x11\x13\x05\x04\x06\x11\x14\x15'
         self.collector_index = collector_index
         self.pk_length = pk_length.to_bytes(4, byteorder='big')
-        self.pk = pk.to_bytes(1, byteorder='big')
+        self.pk = pk.to_bytes((pk.bit_length() + 7) // 8, byteorder='big')
         self.collector_key_hash = b'\x04' * 64
     
     def to_bytes(self):
@@ -18,7 +18,7 @@ import socket
 
 class Metadata_Message:
     def __init__(self, port):
-        self.message_type = MESSAGE.METADATA_COLL.value.to_bytes(1, byteorder='big')
+        self.message_type = MESSAGE.OTHER_COLLECTOR_INFO.value.to_bytes(1, byteorder='big')
         self.election_id = b'\x00\x12\x12\x13\x11\x11\x08\x07\x11\x13\x05\x04\x06\x11\x14\x15'
         self.c_host_length = len(socket.gethostbyname('localhost')).to_bytes(4, byteorder='big')
         self.c_host = socket.gethostbyname('localhost').encode()
