@@ -14,8 +14,13 @@ class Voter_Location:
     def __init__(self):
         self.message_type = MESSAGE.VOTER_LOCATION.value.to_bytes(1, byteorder='big')
         self.election_id = b'\x00\x12\x12\x13\x11\x11\x08\x07\x11\x13\x05\x04\x06\x11\x14\x15'
-        self.location = 3
-        self.location = self.location.to_bytes(1, byteorder='big')
+        self.location = self.calculate_location().to_bytes(1, byteorder='big')
 
     def to_bytes(self):
         return self.message_type + ','.encode() + self.election_id + ','.encode() + self.location
+    
+    def calculate_location(self):
+        return 5
+    
+    def get_location(self):
+        return self.location

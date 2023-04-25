@@ -7,7 +7,6 @@ def get_logger(file_name):
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
 
-    # if file_name[0] != 'v' else "../../logs/{}.log".format(file_name)
     current_dir = os.getcwd()
     root_dir = os.path.dirname(os.path.abspath(__file__))
     while not os.path.exists(os.path.join(root_dir, ".git")):

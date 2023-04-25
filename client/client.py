@@ -25,6 +25,7 @@ class Client:
 
     def receive_message(self):
         timeout = 10
+        message = None
         self.sock.settimeout(timeout)
         try:
             message = self.sock.recv(int(self.length))
@@ -35,15 +36,20 @@ class Client:
             voter_heartbeat_message = Voter_Heartbeat_Message()
             self.send_message(voter_heartbeat_message.to_bytes())
             self.receive_message()
-        message_type = int.from_bytes(message.split(b',')[0], byteorder='big')
-        # receive collectors information from the admin
-        if message_type == MESSAGE.METADATA_VOTER.value:
-            self.logger.info(f'Received collectors information')
-            self.extract_collectors_message(message)
-            self.connect_with_collectors()
-        if message_type == MESSAGE.VOTER_LOCATION.value:
-            self.logger.info(f'GOT MESSAGE FROM COLLECTOR YAY')
-        return message
+        if message:
+            message_type = int.from_bytes(message.split(b',')[0], byteorder='big')
+            # receive collectors information from the admin
+            if message_type == MESSAGE.METADATA_VOTER.value:
+                self.logger.info(f'Received collectors information')
+                self.connect_with_collectors(message)
+                self.receive_message()
+            if message_type == MESSAGE.VOTER_LOCATION.value:
+                self.logger.info(f'Received location from collector: {message}')
+                self.close_connection()
+                return
+        else:
+            return
+
 
     def send_message(self, message):
         time.sleep(0.1)
@@ -69,14 +75,14 @@ class Client:
         self.c2_pk = message_parts[11].decode()
         self.m = message_parts[12].decode()
 
-    def connect_with_collectors(self):
+    def connect_with_collectors(self, message):
+        self.extract_collectors_message(message)
         self.logger.info(f'closing connection with admin')
         self.close_connection()
         self.logger.info(f'Establishing a connection with collector 2 and sending it registration request')
         self.start(self.c2_port)
         message = Voter_Registration_Message(self.id)
         self.send_message(message.to_bytes())
-        self.receive_message()
 
     def start_voting(self):
         self.logger.info(list(self.voting_vector.keys())[0])

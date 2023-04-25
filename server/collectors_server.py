@@ -8,7 +8,7 @@ import sys
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, ROOT_DIR)
 
-from utils.messages.collector_message import Collector_Message
+from utils.messages.collector_message import Collector_Message, Voter_Location
 from utils.Message_Type import MESSAGE
 from server.server import Server
 
@@ -26,13 +26,11 @@ class Collector_Server(Server):
         self.other_c_pk_length = None
         self.other_c_pk = None
         self.other_collector_sock = None
-        self.voter1_registered = False
-        self.voter2_registered = False
-        self.voter3_registered = False
+        self.registered_voters = [False, False, False]
+        self.verified_voters = 0
         self.m = None
         self.x = 0
         self.x_prime = 0
-
 
     def start(self):
         try:
@@ -69,18 +67,20 @@ class Collector_Server(Server):
             elif message_type == MESSAGE.OTHER_COLLECTOR_INFO.value:
                 self.collector_information_received(message)
             elif message_type == MESSAGE.VOTER_REGISTRATION.value:
-                if not self.voter1_registered or not self.voter2_registered or not self.voter3_registered:
+                # register all voters, one by one
+                if not self.registered_voters[0] or not self.registered_voters[1] or not self.registered_voters[2]:
                     self.verify_voters_information(message)
-                if self.voter1_registered and self.voter2_registered and self.voter3_registered:
-                    self.logger.info(f'All voters have been registered with this collector')
-                    self.perform_LAS()
+                    self.verified_voters += 1
             elif message_type == MESSAGE.VOTERS_INFO.value:
                 # admin will send us this message which will contain the voters ids
                 self.voters_information_received(message)
             elif message_type == MESSAGE.VOTER_HEARTBEAT.value:
-                continue
+                if self.registered_voters[0] and self.registered_voters[1] and self.registered_voters[2]:
+                    self.send_voter_their_location(client)
+                self.logger.debug(f'Received heartbeat, but still waiting for other connections')
             else:
                 self.logger.info(f'received unknown message from client, the message: {message}')
+                self.logger.info(f'disconnecting client...')
                 connected = False
         client.close()
         self.logger.info(f'Connection closed with client: {address}')
@@ -116,13 +116,13 @@ class Collector_Server(Server):
         voter_id = message_parts[3]
         if voter_id == self.voter1_id :
             self.logger.info(f'voter with id {voter_id} has been registered')
-            self.voter1_registered = True
+            self.registered_voters[0] = True
         elif voter_id == self.voter2_id :
             self.logger.info(f'voter with id {voter_id} has been registered')
-            self.voter2_registered = True
+            self.registered_voters[1] = True
         elif voter_id == self.voter3_id :
             self.logger.info(f'voter with id {voter_id} has been registered')
-            self.voter3_registered = True
+            self.registered_voters[2] = True
         else:
             self.logger.error(f'voters ids mismatch: {voter_id}')
 
@@ -156,5 +156,10 @@ class Collector_Server(Server):
 
         return [self.x, self.x_prime]
 
-    def perform_LAS(self):
-        pass
+    def send_voter_their_location(self, client):
+        voter_location_message = Voter_Location()
+        message_to_send = voter_location_message.to_bytes()
+        self.logger.debug(f'about to send voter their location: {message_to_send}')
+        client.sendall(message_to_send)
+        self.logger.info(f'Performed LAS and sent voters location')
+        self.logger.debug(f'Location sent: {voter_location_message.get_location()}')
