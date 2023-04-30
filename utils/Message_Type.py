@@ -13,3 +13,5 @@ class MESSAGE(Enum):
     VOTERS_INFO = 10
     VOTER_LOCATION = 11
     VOTER_HEARTBEAT = 12
+    LAS1 = 13
+    LAS2= 14

@@ -1,14 +1,19 @@
 import random
 import math
+import os
+import sys
 
-from Crypto.Util import number
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, ROOT_DIR)
+
+from utils.Crypto_Utils import *
 
 class Paillier:
     pubkey = None
     privkey = None
     def __init__(self, key_length):
-        p = number.getPrime(key_length // 2)
-        q = number.getPrime(key_length // 2)       
+        p = get_prime(key_length // 2)
+        q = get_prime(key_length // 2)       
         #p = 46183
         #q = 48907
         self.pubkey, self.privkey = self.generate_keypair(p , q)
@@ -16,7 +21,7 @@ class Paillier:
     def generate_keypair(self,p, q):
         n = p * q
         lam = (p - 1) * (q - 1)
-        mu = number.inverse(lam , n)
+        mu = inverse(lam , n)
         return n, (lam , mu)
     
     def get_pubkey(self):
@@ -25,9 +30,10 @@ class Paillier:
     def get_keylength(self):
         return 2048
 
-    def encrypt(self,m, pubkey):
+    @staticmethod
+    def encrypt(m, pubkey):
         n = pubkey
-        r = self.random_coprime(n)
+        r = Paillier.random_coprime(n)
         #r = 37404609
         #g = n + 1    
         c1 = pow(1 + n, m, n**2)
@@ -35,7 +41,8 @@ class Paillier:
         c = (c1 * c2) % (n**2)
         return c
 
-    def random_coprime(self,n):
+    @staticmethod
+    def random_coprime(n):
         while True:
             r = random.randint(1, n-1)
             if math.gcd(r, n) == 1:
@@ -55,9 +62,9 @@ class Paillier:
         
         return plaintext
 
-
 def initialize_paillier():
     return Paillier(key_length=2048)
+
 
 
 # To test:

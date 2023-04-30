@@ -27,6 +27,11 @@ if __name__ == '__main__':
     accept = message_received[-1:]
     if accept == b'\x01':
         logger.info('Collector 1 accepted')
+    
+    # Send collector 1 the information of collector 2 so they can connect
+    message = Metadata_Message(3002)
+    message = message.to_bytes()
+    admin.send_message(message)
     admin.close_connection()
 
     # Connect to collector 2 and send the message
