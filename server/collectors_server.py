@@ -27,7 +27,6 @@ class Collector_Server(Server):
         self.other_c_pk = None
         self.other_collector_sock = None
         self.registered_voters = [False, False, False]
-        self.verified_voters = 0
         self.m = None
         self.x = 0
         self.x_prime = 0
@@ -70,14 +69,13 @@ class Collector_Server(Server):
                 # register all voters, one by one
                 if not self.registered_voters[0] or not self.registered_voters[1] or not self.registered_voters[2]:
                     self.verify_voters_information(message)
-                    self.verified_voters += 1
             elif message_type == MESSAGE.VOTERS_INFO.value:
                 # admin will send us this message which will contain the voters ids
                 self.voters_information_received(message)
             elif message_type == MESSAGE.VOTER_HEARTBEAT.value:
                 if self.registered_voters[0] and self.registered_voters[1] and self.registered_voters[2]:
                     self.send_voter_their_location(client)
-                self.logger.debug(f'Received heartbeat, but still waiting for other connections')
+                self.logger.debug(f'Received heartbeat from voters requesting their location, but not all voters have been registered yet')
             else:
                 self.logger.info(f'received unknown message from client, the message: {message}')
                 self.logger.info(f'disconnecting client...')
@@ -159,7 +157,6 @@ class Collector_Server(Server):
     def send_voter_their_location(self, client):
         voter_location_message = Voter_Location()
         message_to_send = voter_location_message.to_bytes()
-        self.logger.debug(f'about to send voter their location: {message_to_send}')
         client.sendall(message_to_send)
         self.logger.info(f'Performed LAS and sent voters location')
         self.logger.debug(f'Location sent: {voter_location_message.get_location()}')

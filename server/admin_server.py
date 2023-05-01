@@ -65,7 +65,7 @@ class Admin_Server(Server):
                 if self.conn_num == 3 and self.sent_collectors_and_voters_all_info:
                     self.send_collectors_info_to_voters(client, address)
                 else:
-                    self.logger.info(f'number of connections is not 3 yet')
+                    self.logger.debug(f'Have not sent voters info to collectors yet')
         client.close()
         self.logger.info(f'Connection closed with client: {address}')
             
@@ -76,7 +76,6 @@ class Admin_Server(Server):
 
     def send_voters_info_to_collectoor(self):
         # all voters have successfuly registered
-        # admin now sends the metadata to all collectors
         admin_message = Voters_Information(self.voter_ids[0], self.voter_ids[1], self.voter_ids[2])
         admin_message = admin_message.to_bytes()
         self.logger.debug(f'voters info to be sent to collectors: {admin_message}')
@@ -111,14 +110,14 @@ class Admin_Server(Server):
         self.logger.info(f'unable to sing user is with username: {username} and password: {password}')
         return False
     
-    def calculate_total_ballots(self, ballot):
-        ballot = eval(ballot)
-        self.ballots += ballot[0]
-        self.ballots_prime += ballot[1]
-        self.voters_num = self.voters_num - 1
-        if self.voters_num == 0:
-            self.logger.info(f'total ballots: {self.ballots}')
-            self.logger.info(f'total ballots prime: {self.ballots_prime}')
-        else:
-            self.logger.info(f'current ballots: {self.ballots}. Waiting on other votes')
+    # def calculate_total_ballots(self, ballot):
+    #     ballot = eval(ballot)
+    #     self.ballots += ballot[0]
+    #     self.ballots_prime += ballot[1]
+    #     self.voters_num = self.voters_num - 1
+    #     if self.voters_num == 0:
+    #         self.logger.info(f'total ballots: {self.ballots}')
+    #         self.logger.info(f'total ballots prime: {self.ballots_prime}')
+    #     else:
+    #         self.logger.info(f'current ballots: {self.ballots}. Waiting on other votes')
         
