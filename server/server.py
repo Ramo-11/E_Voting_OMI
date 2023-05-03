@@ -40,7 +40,7 @@ class Server:
         if not self.server_socket or not self.is_socket_connected(self.server_socket):
             self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.server_socket.connect((self.server, int(port)))
-            self.logger.info(f'Connected to server on port {port}')
+            self.logger.debug(f'Connected to server on port {port}')
         else:
             self.logger.error('Socket is already connected')
 
@@ -49,7 +49,7 @@ class Server:
         self.send_message(disconnect_message)
         time.sleep(0.1)
         self.server_socket.close()
-        self.logger.info('Connection closed with server.')
+        self.logger.debug('Connection closed with server.')
 
     def send_message(self, message):
         self.server_socket.sendall(message)

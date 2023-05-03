@@ -6,11 +6,11 @@ from utils.messages.voter_messages import Voter_Registration_Message, Voter_Hear
 
 class Client:
     def __init__(self, id, logger):
-        # self.voting_vector = {
-        #     "What is the best CS class?": ["240", "555", "511"],
-        #     "What is the hardest homework in CSCI 55500?": ["H1", "H2", "H3"],
-        #     "Who is the best professor in the CS department?": ["Xzou", "Kelly", "Andy"]
-        # } 
+        self.voting_vector = {
+            "What is the best CS class?": ["240", "555", "511"],
+            "What is the hardest homework in CSCI 55500?": ["H1", "H2", "H3"],
+            "Who is the best professor in the CS department?": ["Xzou", "Kelly", "Andy"]
+        } 
         self.server = socket.gethostbyname('localhost')
         self.header = 64
         self.format = 'utf-8'
@@ -37,7 +37,7 @@ class Client:
         sock.sendall(message)
 
     def receive_message(self, sock):
-        timeout = 10
+        timeout = 2
         message = None
         sock.settimeout(timeout)
         try:
@@ -45,7 +45,7 @@ class Client:
             while message == b'':
                 message = sock.recv(int(self.length))
         except:
-            self.logger.debug(f'No message received within {timeout} seconds, continuing to listen...')
+            self.logger.debug(f'No message received within {timeout} seconds, sending heartbeat...')
             voter_heartbeat_message = Voter_Heartbeat_Message()
             self.send_message(voter_heartbeat_message.to_bytes(), sock)
             self.receive_message(sock)
@@ -53,7 +53,8 @@ class Client:
             message_type = int.from_bytes(message.split(b',')[0], byteorder='big')
             # receive collectors information from the admin
             if message_type == MESSAGE.METADATA_VOTER.value:
-                self.logger.info(f'Received collectors information.\nclosing connection with admin')
+                self.logger.info(f'Received collectors information.')
+                self.logger.debug(f'closing connection with admin.')
                 self.close_connection(self.admin_sock)
                 self.extract_collectors_information(message)
                 self.connect_with_collector2(message)
@@ -68,6 +69,7 @@ class Client:
                 self.location_tracker += 1
                 if self.location_tracker == 2:
                     self.logger.info(f'Location: {self.location}')
+                    self.start_voting()
         else:
             return
 
@@ -76,7 +78,7 @@ class Client:
         self.send_message(disconnect_message, sock)
         time.sleep(0.1)
         sock.close()
-        self.logger.info('Connection closed successfully.')
+        self.logger.debug('Connection closed successfully.')
     
     def extract_collectors_information(self, message):
         message_parts = message.split(b',')
@@ -108,22 +110,24 @@ class Client:
         self.send_message(message.to_bytes(), self.c1_sock)
 
     def start_voting(self):
-        self.logger.info(list(self.voting_vector.keys())[0])
-        self.logger.info(list(self.voting_vector.values())[0])
+        print(list(self.voting_vector.keys())[0])
+        print(list(self.voting_vector.values())[0])
         q1_answer = input("")
         if q1_answer not in list(self.voting_vector.values())[0]:
             raise Exception("Answer is not in the list")
-        self.logger.info(list(self.voting_vector.keys())[1])
-        self.logger.info(list(self.voting_vector.values())[1])
+        print(list(self.voting_vector.keys())[1])
+        print(list(self.voting_vector.values())[1])
         q2_answer = input("")
         if q2_answer not in list(self.voting_vector.values())[1]:
             raise Exception("Answer is not in the list")
-        self.logger.info(list(self.voting_vector.keys())[2])
-        self.logger.info(list(self.voting_vector.values())[2])
+        print(list(self.voting_vector.keys())[2])
+        print(list(self.voting_vector.values())[2])
         q3_answer = input("")
         if q3_answer not in list(self.voting_vector.values())[2]:
             raise Exception("Answer is not in the list")
-        return q1_answer + "," + q2_answer + "," + q3_answer
+        vote = q1_answer + ',' + q2_answer + ',' + q3_answer
+        voting_vector = self.generate_voting_vector(vote)
+        self.logger.info(f'voting vector: {voting_vector}')
     
     def generate_voting_vector(self, vote):
         vector = '000000000'

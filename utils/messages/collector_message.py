@@ -20,7 +20,7 @@ class Voter_Location:
         return self.message_type + ','.encode() + self.election_id + ','.encode() + self.location
     
     def calculate_location(self):
-        return 5
+        return 1
     
     def get_location(self):
         return self.location
