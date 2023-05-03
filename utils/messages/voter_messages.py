@@ -27,3 +27,12 @@ class Voter_Heartbeat_Message:
 
     def to_bytes(self):
         return self.message_type
+    
+
+class Voter_Request_Shares_Message:
+    def __init__(self, voter_id):
+        self.voter_id = voter_id
+        self.message_type = MESSAGE.REQUEST_SHARES.value.to_bytes(1, byteorder='big')
+
+    def to_bytes(self):
+        return self.message_type + ','.encode() + self.voter_id

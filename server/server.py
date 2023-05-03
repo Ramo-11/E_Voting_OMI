@@ -39,8 +39,12 @@ class Server:
         # if the socket doesn't exists and is not connected, connect
         if not self.server_socket or not self.is_socket_connected(self.server_socket):
             self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.server_socket.connect((self.server, int(port)))
-            self.logger.debug(f'Connected to server on port {port}')
+            try:
+                self.server_socket.connect((self.server, int(port)))
+                self.logger.debug(f'Connected to server on port {port}')
+            except:
+                self.logger.error(f'Unable to connect, trying again...')
+                self.connect(port)
         else:
             self.logger.error('Socket is already connected')
 

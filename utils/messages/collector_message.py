@@ -1,4 +1,5 @@
 from utils.Message_Type import MESSAGE
+from utils.collector_utils import generate_random_shares
 
 class Collector_Message:
     def __init__(self, election_id):
@@ -24,3 +25,18 @@ class Voter_Location:
     
     def get_location(self):
         return self.location
+    
+
+class Voter_Shares:
+    def __init__(self):
+        self.message_type = MESSAGE.VOTER_SHARES.value.to_bytes(1, byteorder='big')
+        shares = generate_random_shares()
+        self.x = shares[0].to_bytes(2, byteorder='big')
+        self.x_prime = shares[1].to_bytes(2, byteorder='big')
+
+    def to_bytes(self):
+        return self.message_type + ','.encode() + self.x + ','.encode() + self.x_prime
+    
+    def get_shares(self):
+        return [self.x, self.x_prime]
+    

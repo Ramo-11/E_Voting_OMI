@@ -67,7 +67,7 @@ class Admin_Server(Server):
                 else:
                     self.logger.debug(f'Have not sent voters info to collectors yet')
         client.close()
-        self.logger.info(f'Connection closed with client: {address}')
+        self.logger.debug(f'Connection closed with client: {address}')
             
     def send_collectors_info_to_voters(self, client, address):
         message = Voter_Registration_Response()

@@ -26,4 +26,13 @@ logger.info(f'Sending registration request to admin')
 voter_reigstration_message = Voter_Registration_Message(voter3.id)
 voter3.send_message(voter_reigstration_message.to_bytes(), voter3.admin_sock)
 
-voter3.receive_message(voter3.admin_sock)
+voter3.receive_message_from_admin()
+
+
+voter3.connect_with_collector2()
+voter3.receive_message_from_collector(voter3.c2_sock)
+voter3.close_connection(voter3.c2_sock)
+
+voter3.connect_with_collector1()
+voter3.receive_message_from_collector(voter3.c1_sock)
+voter3.close_connection(voter3.c1_sock)
