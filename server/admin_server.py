@@ -2,6 +2,7 @@ import os
 import sys
 import threading
 import time
+import struct 
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, ROOT_DIR)
@@ -18,13 +19,19 @@ class Admin_Server(Server):
             'user2': 'bbbb',
             'user3': 'cccc',
         }
-        self.voters_num = 3
+        self.N = 3
         self.conn_num = 0
         self.voter_ids = []
         self.key_hashes = []
         self.sent_collectors_and_voters_all_info = False
-        self.ballots = 0
-        self.ballots_prime = 0
+        self.ballots = [0, 0, 0]
+        self.ballots_prime = [0, 0, 0]
+        self.vote_tally = {}
+        self.M = 3
+        num_ques = 3
+        tally_len = self.M * num_ques
+        self.tallies = [0]*tally_len
+        self.ballots_recvd = 0
 
     def start(self):
         try:
@@ -43,7 +50,24 @@ class Admin_Server(Server):
         connected = True
         while connected:
             try:
-                message = client.recv(int(self.length))
+                length_prefix = client.recv(4)
+                if length_prefix != b'':
+                    self.logger.debug(f"Len prefix: {length_prefix}")
+                message_len = int.from_bytes(length_prefix, "big")
+                if message_len != 0:
+                    self.logger.debug(f"Len: {message_len}")
+                message = b''
+                if message_len > self.length:
+                    # Loop until all message data is received
+                    while len(message) < message_len:
+                        # Determine amount of data to receive in this iteration
+                        remaining_len = message_len - len(message)
+                        chunk_size = self.length if remaining_len > self.length else remaining_len
+                        # Receive data and append to buffer
+                        chunk = client.recv(chunk_size)
+                        message += chunk
+                else:
+                    message = client.recv(int(self.length))
             except:
                 break
             message_type = int.from_bytes(message.split(b',')[0], byteorder='big')
@@ -51,32 +75,39 @@ class Admin_Server(Server):
                 continue
             if message_type == MESSAGE.DISCONNECT.value:
                 connected = False
-            if message_type == MESSAGE.VOTER_SIGNIN.value:
+            elif message_type == MESSAGE.VOTER_SIGNIN.value:
                 self.log_user_in(message)
-            if message_type == MESSAGE.VOTER_REGISTRATION.value:
+            elif message_type == MESSAGE.VOTER_REGISTRATION.value:
                 self.extract_voters_registration_message(message)
                 self.conn_num += 1
-                if self.conn_num == 3:
-                    self.send_voters_info_to_collectoor()
+                if self.conn_num == self.N:
+                    self.send_voters_info_to_collector()
                     time.sleep(5)
                     self.send_collectors_info_to_voters(client, address)
                     self.sent_collectors_and_voters_all_info = True
-            if message_type == MESSAGE.VOTER_HEARTBEAT.value:
+            elif message_type == MESSAGE.VOTER_HEARTBEAT.value:
                 if self.conn_num == 3 and self.sent_collectors_and_voters_all_info:
                     self.send_collectors_info_to_voters(client, address)
                 else:
-                    self.logger.info(f'number of connections is not 3 yet')
+                    self.logger.debug(f'Have not sent voters info to collectors yet')
+            elif message_type == MESSAGE.VOTER_BALLOTS.value:
+               self.extract_voter_ballot(message)
+               self.calculate_total_ballots(self.latest_received_ballot)
+               self.tally_votes(message) 
+               self.ballots_recvd += 1
+               if self.ballots_recvd == self.N:
+                   self.display_election_results()
+            
         client.close()
         self.logger.info(f'Connection closed with client: {address}')
             
     def send_collectors_info_to_voters(self, client, address):
-        message = Voter_Registration_Response()
+        message = Voter_Registration_Response(m=self.M.to_bytes(1, byteorder='big'))
         client.send(message.to_bytes())
         self.logger.info(f'Admin sent collectors inforamtion to voter in address: {address}')
 
-    def send_voters_info_to_collectoor(self):
+    def send_voters_info_to_collector(self):
         # all voters have successfuly registered
-        # admin now sends the metadata to all collectors
         admin_message = Voters_Information(self.voter_ids[0], self.voter_ids[1], self.voter_ids[2])
         admin_message = admin_message.to_bytes()
         self.logger.debug(f'voters info to be sent to collectors: {admin_message}')
@@ -97,6 +128,18 @@ class Admin_Server(Server):
         self.voter_ids.append(message_parts[3])
         self.logger.info(f'Admin received voter\'s registration request for voter {message_parts[3]}')
 
+    def extract_voter_ballot(self, message):
+        message_parts = message.split(b',')
+        #message_parts[1]
+        unpacked_data = []
+        for i in range(0, len(message_parts[1]), 2):
+            value = struct.unpack('>H', message_parts[1][i:i+2])[0]
+            unpacked_data.append(value)
+
+        # Convert the list of integers to a list of lists
+        self.latest_received_ballot = [[unpacked_data[i], unpacked_data[i+1]] for i in range(0, len(unpacked_data), 2)]
+        self.logger.info(f'received ballot from user {self.latest_received_ballot}')
+
     def log_user_in(self, message):
         self.logger.info(f'Admin received voter\'s sign in request')
         message_parts = message.split(b',')
@@ -112,13 +155,81 @@ class Admin_Server(Server):
         return False
     
     def calculate_total_ballots(self, ballot):
-        ballot = eval(ballot)
-        self.ballots += ballot[0]
-        self.ballots_prime += ballot[1]
-        self.voters_num = self.voters_num - 1
-        if self.voters_num == 0:
-            self.logger.info(f'total ballots: {self.ballots}')
-            self.logger.info(f'total ballots prime: {self.ballots_prime}')
-        else:
-            self.logger.info(f'current ballots: {self.ballots}. Waiting on other votes')
+        self.ballots[0] += ballot[0][0]
+        self.ballots[1] += ballot[1][0]
+        self.ballots[2] += ballot[2][0]
+
+        self.ballots_prime[0] += ballot[0][1]
+        self.ballots_prime[1] += ballot[1][1]
+        self.ballots_prime[2] += ballot[2][1]
+
+        self.logger.info(f'aggregate ballots (p) for question 1 = {self.ballots[0]}')
+        self.logger.info(f'aggregate ballots (p_prime) for question 1 = {self.ballots_prime[0]}')
+
+        self.logger.info(f'aggregate ballots (p) for question 2 = {self.ballots[1]}')
+        self.logger.info(f'aggregate ballots (p_prime) for question 2 = {self.ballots_prime[1]}')
+
+        self.logger.info(f'aggregate ballots (p) for question 3 = {self.ballots[2]}')
+        self.logger.info(f'aggregate ballots (p_prime) for question 3 = {self.ballots_prime[2]}')
+    
+    def tally_votes(self, message):
+        vote_vec_len = self.N * self.M
+        p_is = []
+        xs = []
+        message_parts = message.split(b',')
+        #message_parts[1]
+        unpacked_data = []
+        for i in range(0, len(message_parts[2]), 2):
+            value = struct.unpack('>H', message_parts[2][i:i+2])[0]
+            unpacked_data.append(value)
+
+        # Convert the list of integers to a list of lists
+        shares = [[unpacked_data[i], unpacked_data[i+1]] for i in range(0, len(unpacked_data), 2)]
+        self.logger.info(f'received shares from user {shares}')
+        xs.append(shares[0][0])
+        xs.append(shares[1][0])
+
+        for ballot in self.latest_received_ballot:
+            p_is.append(ballot[0])
+
+        for i in range(len(p_is)):
+            vote = p_is[i] - xs[0] - xs[1]
+            vote_to_bit = bin(vote)[2:]
+            vote_str = '{0:0>{1}}'.format(vote_to_bit, vote_vec_len)
+            vote_pos = vote_str.find("1")
+            cand_vote_pos = self.M*i + (vote_pos%self.M)
+            cur_tally = self.tallies[cand_vote_pos]
+            self.tallies[cand_vote_pos] = cur_tally + 1
+
+    
+    # #vote1 = ["240","HW1","Andy"]
+    def display_election_results(self):
+        ques = {
+            "What is the best CS class?": ["240", "555", "511"],
+            "What is the hardest homework in CSCI 55500?": ["H1", "H2", "H3"],
+            "Who is the best professor in the CS department?": ["Xzou", "Kelly", "Andy"]
+        }
+        key_list = list(ques.keys())
+        for i in range(len(ques.keys())):
+            results = []
+            cur_max_pos = -1
+            cur_max_val = -1
+            max_changes = 0
+            self.logger.info(f"Results for question \"{key_list[i]}\": ")
+            responses = ques[key_list[i]]
+            for j in range(len(responses)):
+                tally_pos = i*self.M + j
+                total = self.tallies[tally_pos]
+                if total > cur_max_val:
+                    cur_max_pos = j
+                    cur_max_val = total
+                    max_changes +=1
+                results.append(total)
+                self.logger.info(f"\t{responses[j]}: {total}")
+            if max_changes > 1 or (max_changes == 1 and cur_max_val == self.N):
+                self.logger.info(f"\tThe winner is {responses[cur_max_pos]} with {results[cur_max_pos]} votes.")
+            else:
+                self.logger.info(f"\tAll candidates tied.")
+
+    
         

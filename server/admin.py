@@ -29,7 +29,7 @@ if __name__ == '__main__':
         logger.info('Collector 1 accepted')
     
     # Send collector 1 the information of collector 2 so they can connect
-    message = Metadata_Message(3002)
+    message = Metadata_Message(3002, m=admin.M.to_bytes(1, byteorder='big'))
     message = message.to_bytes()
     admin.send_message(message)
     admin.close_connection()
@@ -46,7 +46,7 @@ if __name__ == '__main__':
         logger.info('All collectors accepted their registration request')
 
     # Send collector 2 the information of collector 1 so they can connect
-    message = Metadata_Message(3001)
+    message = Metadata_Message(3001, m=admin.M.to_bytes(1, byteorder='big'))
     message = message.to_bytes()
     admin.send_message(message)
     admin.close_connection()
