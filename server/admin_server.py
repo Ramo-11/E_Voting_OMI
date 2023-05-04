@@ -2,6 +2,7 @@ import os
 import sys
 import threading
 import time
+import struct 
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, ROOT_DIR)
@@ -23,8 +24,8 @@ class Admin_Server(Server):
         self.voter_ids = []
         self.key_hashes = []
         self.sent_collectors_and_voters_all_info = False
-        self.ballots = 0
-        self.ballots_prime = 0
+        self.ballots = [0, 0, 0]
+        self.ballots_prime = [0, 0, 0]
 
     def start(self):
         try:
@@ -33,7 +34,7 @@ class Admin_Server(Server):
             self.logger.info(f'Server is listening on {self.server}, port {self.port}')
             while True:
                 client, address = self.client_sock.accept()
-                self.logger.info(f'New Connection from: {str(address)}')
+                self.logger.debug(f'New Connection from: {str(address)}')
                 self.thread = threading.Thread(target=self.listen_to_client, args=(client, address))
                 self.thread.start()
         except:
@@ -66,6 +67,9 @@ class Admin_Server(Server):
                     self.send_collectors_info_to_voters(client, address)
                 else:
                     self.logger.debug(f'Have not sent voters info to collectors yet')
+            elif message_type == MESSAGE.VOTER_BALLOTS.value:
+               self.extract_voter_ballot(message)
+               self.calculate_total_ballots(self.latest_received_ballot) 
         client.close()
         self.logger.debug(f'Connection closed with client: {address}')
             
@@ -96,6 +100,18 @@ class Admin_Server(Server):
         self.voter_ids.append(message_parts[3])
         self.logger.info(f'Admin received voter\'s registration request for voter {message_parts[3]}')
 
+    def extract_voter_ballot(self, message):
+        message_parts = message.split(b',')
+        message_parts[1]
+        unpacked_data = []
+        for i in range(0, len(message_parts[1]), 2):
+            value = struct.unpack('>H', message_parts[1][i:i+2])[0]
+            unpacked_data.append(value)
+
+        # Convert the list of integers to a list of lists
+        self.latest_received_ballot = [[unpacked_data[i], unpacked_data[i+1]] for i in range(0, len(unpacked_data), 2)]
+        self.logger.info(f'received ballot from user {self.latest_received_ballot}')
+
     def log_user_in(self, message):
         self.logger.info(f'Admin received voter\'s sign in request')
         message_parts = message.split(b',')
@@ -110,14 +126,21 @@ class Admin_Server(Server):
         self.logger.info(f'unable to sing user is with username: {username} and password: {password}')
         return False
     
-    # def calculate_total_ballots(self, ballot):
-    #     ballot = eval(ballot)
-    #     self.ballots += ballot[0]
-    #     self.ballots_prime += ballot[1]
-    #     self.voters_num = self.voters_num - 1
-    #     if self.voters_num == 0:
-    #         self.logger.info(f'total ballots: {self.ballots}')
-    #         self.logger.info(f'total ballots prime: {self.ballots_prime}')
-    #     else:
-    #         self.logger.info(f'current ballots: {self.ballots}. Waiting on other votes')
+    def calculate_total_ballots(self, ballot):
+        self.ballots[0] += ballot[0][0]
+        self.ballots[1] += ballot[1][0]
+        self.ballots[2] += ballot[2][0]
+
+        self.ballots_prime[0] += ballot[0][1]
+        self.ballots_prime[1] += ballot[1][1]
+        self.ballots_prime[2] += ballot[2][1]
+
+        self.logger.info(f'aggregate ballots (p) for question 1 = {self.ballots[0]}')
+        self.logger.info(f'aggregate ballots (p_prime) for question 1 = {self.ballots_prime[0]}')
+
+        self.logger.info(f'aggregate ballots (p) for question 2 = {self.ballots[1]}')
+        self.logger.info(f'aggregate ballots (p_prime) for question 2 = {self.ballots_prime[1]}')
+
+        self.logger.info(f'aggregate ballots (p) for question 3 = {self.ballots[2]}')
+        self.logger.info(f'aggregate ballots (p_prime) for question 3 = {self.ballots_prime[2]}')
         

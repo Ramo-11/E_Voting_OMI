@@ -3,7 +3,7 @@ import time
 import struct
 
 from utils.Message_Type import MESSAGE
-from utils.messages.voter_messages import Voter_Registration_Message, Voter_Heartbeat_Message, Voter_Request_Shares_Message
+from utils.messages.voter_messages import Voter_Registration_Message, Voter_Heartbeat_Message
 
 class Client:
     def __init__(self, id, logger):

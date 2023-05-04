@@ -1,3 +1,5 @@
+import struct
+
 from utils.Message_Type import MESSAGE
 
 class Voter_Signin_Message:
@@ -19,7 +21,6 @@ class Voter_Registration_Message:
     def to_bytes(self):
         return self.message_type + ','.encode() + self.election_id + ','.encode() + self.key_hash + ','.encode() + self.voter_id
     
-
 # this message is responsible for request the collectors information again
 class Voter_Heartbeat_Message:
     def __init__(self):
@@ -28,11 +29,18 @@ class Voter_Heartbeat_Message:
     def to_bytes(self):
         return self.message_type
     
-
-class Voter_Request_Shares_Message:
-    def __init__(self, voter_id):
-        self.voter_id = voter_id
-        self.message_type = MESSAGE.REQUEST_SHARES.value.to_bytes(1, byteorder='big')
+class Voter_Ballot_Message:
+    def __init__(self, ballot):
+        self.message_type = MESSAGE.VOTER_BALLOTS.value.to_bytes(1, byteorder='big')
+        self.ballot = ballot
 
     def to_bytes(self):
-        return self.message_type + ','.encode() + self.voter_id
+        return self.message_type + ','.encode() + self.ballot_to_bytes()
+    
+    def ballot_to_bytes(self):
+        encoded_ballot = b''
+        for sublist in self.ballot:
+            for value in sublist:
+                encoded_ballot += struct.pack('>H', value)
+
+        return encoded_ballot
