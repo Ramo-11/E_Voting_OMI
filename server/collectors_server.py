@@ -8,7 +8,7 @@ import sys
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, ROOT_DIR)
 
-from utils.messages.collector_message import Collector_Message, Voter_Location, Voter_Shares
+from utils.messages.collector_message import Collector_Message, Voter_Location_And_Shares
 from utils.Message_Type import MESSAGE
 from server.server import Server
 
@@ -30,6 +30,7 @@ class Collector_Server(Server):
         self.m = None
         self.x = 0
         self.x_prime = 0
+        self.voter_location_and_shares_message = Voter_Location_And_Shares()
 
     def start(self):
         try:
@@ -74,11 +75,9 @@ class Collector_Server(Server):
                 self.voters_information_received(message)
             elif message_type == MESSAGE.VOTER_HEARTBEAT.value:
                 if self.registered_voters[0] and self.registered_voters[1] and self.registered_voters[2]:
-                    self.send_voter_their_location(client)
+                    self.logger.info(f'Voter has requested location and shares')
+                    self.send_voter_their_location_and_shares(client)
                 self.logger.debug(f'Received heartbeat from voters requesting their location, but not all voters have been registered yet')
-            elif message_type == MESSAGE.REQUEST_SHARES.value:
-                self.logger.info(f'voter wants shares')
-                self.send_voter_shares(client)
             else:
                 self.logger.info(f'received unknown message from client, the message: {message}')
                 self.logger.info(f'disconnecting client...')
@@ -145,16 +144,11 @@ class Collector_Server(Server):
         self.other_collector_sock.sendall(message)
         self.logger.info(f'sent message to other collector')
 
-    def send_voter_their_location(self, client):
-        voter_location_message = Voter_Location()
-        message_to_send = voter_location_message.to_bytes()
+    def send_voter_their_location_and_shares(self, client):
+        message_to_send = self.voter_location_and_shares_message.to_bytes()
         client.sendall(message_to_send)
         self.logger.info(f'Performed LAS and sent voters location')
-        self.logger.debug(f'Location sent: {voter_location_message.get_location()}')
-
-    def send_voter_shares(self, client):
-        voter_shares = Voter_Shares()
-        message_to_send = voter_shares.to_bytes()
-        client.sendall(message_to_send)
-        self.logger.info(f'Sent voter its shares')
-        self.logger.info(f'Shares sent: {voter_shares.get_shares()}')
+        self.logger.info(f'Sent voter shares')
+        self.logger.debug(f'Location sent: {self.voter_location_and_shares_message.get_location()}')
+        self.logger.debug(f'Shares sent: {self.voter_location_and_shares_message.get_shares()}')
+        

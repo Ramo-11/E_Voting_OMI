@@ -51,9 +51,9 @@ class Admin_Server(Server):
                 continue
             if message_type == MESSAGE.DISCONNECT.value:
                 connected = False
-            if message_type == MESSAGE.VOTER_SIGNIN.value:
+            elif message_type == MESSAGE.VOTER_SIGNIN.value:
                 self.log_user_in(message)
-            if message_type == MESSAGE.VOTER_REGISTRATION.value:
+            elif message_type == MESSAGE.VOTER_REGISTRATION.value:
                 self.extract_voters_registration_message(message)
                 self.conn_num += 1
                 if self.conn_num == 3:
@@ -61,7 +61,7 @@ class Admin_Server(Server):
                     time.sleep(5)
                     self.send_collectors_info_to_voters(client, address)
                     self.sent_collectors_and_voters_all_info = True
-            if message_type == MESSAGE.VOTER_HEARTBEAT.value:
+            elif message_type == MESSAGE.VOTER_HEARTBEAT.value:
                 if self.conn_num == 3 and self.sent_collectors_and_voters_all_info:
                     self.send_collectors_info_to_voters(client, address)
                 else:

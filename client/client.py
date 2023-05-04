@@ -1,5 +1,6 @@
 import socket
 import time
+import struct
 
 from utils.Message_Type import MESSAGE
 from utils.messages.voter_messages import Voter_Registration_Message, Voter_Heartbeat_Message, Voter_Request_Shares_Message
@@ -19,6 +20,8 @@ class Client:
         self.logger = logger
         self.location = 0
         self.location_tracker = 0
+        self.all_shares = []
+        self.all_ballots = []
     
     def start_channel_with_admin(self, port):
         self.admin_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -76,27 +79,16 @@ class Client:
             self.receive_message_from_collector(sock)
         if message:
             message_type = int.from_bytes(message.split(b',')[0], byteorder='big')
-            if message_type == MESSAGE.VOTER_LOCATION.value:
+            if message_type == MESSAGE.VOTER_LOCATION_AND_SHARES.value:
                 self.logger.debug(f'Received location from collector: {message}')
-                self.extract_location(message)  
+                self.extract_location_and_shares(message)  
                 self.location_tracker += 1
                 if self.location_tracker == 2:
-                    self.logger.info(f'Location: {self.location}')
-                    self.start_voting(sock)
-            elif message_type == MESSAGE.VOTER_SHARES.value:
-                self.logger.debug(f'got random shares from collector: {message}')
-                self.extract_random_shares(message)
+                    self.location = int(self.location)
+                    self.logger.info(f'location = {self.location}')
+                    self.start_voting()
             else:
                 self.logger.error(f'Received unknown messge from collector: {message}')
-
-
-    def close_connection(self, sock):
-        disconnect_message = MESSAGE.DISCONNECT.value.to_bytes(1, byteorder='big')
-        self.send_message(disconnect_message, sock)
-        time.sleep(0.1)
-        sock.close()
-        self.logger.debug('Connection closed successfully.')
-    
 
     def extract_collectors_information(self, message):
         message_parts = message.split(b',')
@@ -111,34 +103,15 @@ class Client:
         self.c2_pk = message_parts[11].decode()
         self.m = message_parts[12].decode()
 
-
-    def extract_random_shares(self, message):
+    def extract_location_and_shares(self, message):
         message_parts = message.split(b',')
-        self.x = int.from_bytes(message_parts[1], byteorder='big')
-        self.x_prime = int.from_bytes(message_parts[2], byteorder='big')
-        self.logger.info(f'extracted shares: x = {self.x}, x_prime = {self.x_prime}')
+        self.location += struct.unpack('>f', message_parts[2])[0]
+        x = int.from_bytes(message_parts[3], byteorder='big')
+        x_prime = int.from_bytes(message_parts[4], byteorder='big')
+        self.all_shares.append([x, x_prime])
+        self.logger.info(f'shares: x = {x}, x_prime = {x_prime}')
 
-
-    def extract_location(self, message):
-        message_parts = message.split(b',')
-        self.location += int.from_bytes(message_parts[2], byteorder='big')
-
-
-    def connect_with_collector2(self):
-        self.logger.info(f'Establishing a connection with collector 2 and sending it a registration request')
-        self.start_channel_with_collector2(self.c2_port)
-        message = Voter_Registration_Message(self.id)
-        self.send_message(message.to_bytes(), self.c2_sock)
-
-
-    def connect_with_collector1(self):
-        self.logger.info(f'Establishing a connection with collector 1 and sending it a registration request')
-        self.start_channel_with_collector1(self.c1_port)
-        message = Voter_Registration_Message(self.id)
-        self.send_message(message.to_bytes(), self.c1_sock)
-
-
-    def start_voting(self, sock):
+    def start_voting(self):
         print(list(self.voting_vector.keys())[0])
         print(list(self.voting_vector.values())[0])
         q1_answer = input("")
@@ -154,13 +127,13 @@ class Client:
         q3_answer = input("")
         if q3_answer not in list(self.voting_vector.values())[2]:
             raise Exception("Answer is not in the list")
+        # this is the vote to send in the voter message to send to admin in order for admin to display the winner
         vote = q1_answer + ',' + q2_answer + ',' + q3_answer
         voting_vector = self.generate_voting_vector(vote)
         self.logger.debug(f'voting vector: {voting_vector}')
-        self.request_shares(self.id, sock)
-        self.receive_message_from_collector(sock)
+        self.generate_all_ballots(voting_vector, self.all_shares)
+        self.logger.info(f'Ballots = {self.all_ballots}')
     
-
     def generate_voting_vector(self, vote):
         vector = '000000000'
         voting_list = []
@@ -176,17 +149,31 @@ class Client:
             voting_list.append([v, v_prime]) 
         return voting_list
     
-
-    def request_shares(self, id, sock):
-        request_shares_message = Voter_Request_Shares_Message(id)
-        self.send_message(request_shares_message.to_bytes(), sock)
-
-
     def generate_all_ballots(self, vote, shares):
-        ballots = self.generate_ballots(vote[0], shares[0])
-        ballots_prime = self.generate_ballots(vote[1], shares[1])
-        return [ballots, ballots_prime]
+        for v in vote:
+            p = self.generate_ballots(v[0], shares[0][0], shares[1][0])
+            p_prime = self.generate_ballots(v[1], shares[0][1], shares[1][0])
+            self.all_ballots.append([p, p_prime])
 
+    def generate_ballots(self, vote, x, x_prime):
+        return vote + x + x_prime
 
-    def generate_ballots(self, vote, shares):
-        return vote + sum(shares)
+    def close_connection(self, sock):
+        disconnect_message = MESSAGE.DISCONNECT.value.to_bytes(1, byteorder='big')
+        self.send_message(disconnect_message, sock)
+        time.sleep(0.1)
+        sock.close()
+        self.logger.debug('Connection closed successfully.')
+
+    def connect_with_collector2(self):
+        self.logger.info(f'Establishing a connection with collector 2 and sending it a registration request')
+        self.start_channel_with_collector2(self.c2_port)
+        message = Voter_Registration_Message(self.id)
+        self.send_message(message.to_bytes(), self.c2_sock)
+
+    def connect_with_collector1(self):
+        self.logger.info(f'Establishing a connection with collector 1 and sending it a registration request')
+        self.start_channel_with_collector1(self.c1_port)
+        message = Voter_Registration_Message(self.id)
+        self.send_message(message.to_bytes(), self.c1_sock)
+        
