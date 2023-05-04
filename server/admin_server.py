@@ -67,7 +67,7 @@ class Admin_Server(Server):
                         chunk = client.recv(chunk_size)
                         message += chunk
                 else:
-                    message = client.recv(int(self.length))
+                    message = client.recv(message_len)
             except:
                 break
             message_type = int.from_bytes(message.split(b',')[0], byteorder='big')
@@ -163,14 +163,14 @@ class Admin_Server(Server):
         self.ballots_prime[1] += ballot[1][1]
         self.ballots_prime[2] += ballot[2][1]
 
-        self.logger.info(f'aggregate ballots (p) for question 1 = {self.ballots[0]}')
-        self.logger.info(f'aggregate ballots (p_prime) for question 1 = {self.ballots_prime[0]}')
+        print(f'aggregate ballots (p) for question 1 = {self.ballots[0]}')
+        print(f'aggregate ballots (p_prime) for question 1 = {self.ballots_prime[0]}')
 
-        self.logger.info(f'aggregate ballots (p) for question 2 = {self.ballots[1]}')
-        self.logger.info(f'aggregate ballots (p_prime) for question 2 = {self.ballots_prime[1]}')
+        print(f'aggregate ballots (p) for question 2 = {self.ballots[1]}')
+        print(f'aggregate ballots (p_prime) for question 2 = {self.ballots_prime[1]}')
 
-        self.logger.info(f'aggregate ballots (p) for question 3 = {self.ballots[2]}')
-        self.logger.info(f'aggregate ballots (p_prime) for question 3 = {self.ballots_prime[2]}')
+        print(f'aggregate ballots (p) for question 3 = {self.ballots[2]}')
+        print(f'aggregate ballots (p_prime) for question 3 = {self.ballots_prime[2]}')
     
     def tally_votes(self, message):
         vote_vec_len = self.N * self.M
@@ -214,8 +214,7 @@ class Admin_Server(Server):
             results = []
             cur_max_pos = -1
             cur_max_val = -1
-            max_changes = 0
-            self.logger.info(f"Results for question \"{key_list[i]}\": ")
+            print(f"Results for question \"{key_list[i]}\": ")
             responses = ques[key_list[i]]
             for j in range(len(responses)):
                 tally_pos = i*self.M + j
@@ -223,13 +222,12 @@ class Admin_Server(Server):
                 if total > cur_max_val:
                     cur_max_pos = j
                     cur_max_val = total
-                    max_changes +=1
                 results.append(total)
-                self.logger.info(f"\t{responses[j]}: {total}")
-            if max_changes > 1 or (max_changes == 1 and cur_max_val == self.N):
-                self.logger.info(f"\tThe winner is {responses[cur_max_pos]} with {results[cur_max_pos]} votes.")
+                print(f"\t{responses[j]}: {total}")
+            if cur_max_val > 1:
+                print(f"\tThe winner is {responses[cur_max_pos]} with {results[cur_max_pos]} votes.")
             else:
-                self.logger.info(f"\tAll candidates tied.")
+                print(f"\tAll candidates tied.")
 
     
         

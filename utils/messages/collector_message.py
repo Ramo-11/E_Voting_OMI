@@ -30,11 +30,6 @@ class Voter_Location_And_Shares:
     def to_bytes(self):
         base_message = self.message_type + self.election_id + self.x + self.x_prime + self.pk_n_length + self.pk_n + self.rji
         return construct_byte_message(base_message)
-
-    def calculate_location(self):
-        if not self.sent_first_location:
-            self.sent_first_location = True
-        return self.location_to_send
     
     def get_location(self):
         return self.rji
