@@ -25,9 +25,10 @@ class Paillier:
     def get_keylength(self):
         return 2048
 
-    def encrypt(self,m, pubkey):
+    @staticmethod
+    def encrypt(m, pubkey):
         n = pubkey
-        r = self.random_coprime(n)
+        r = Paillier.random_coprime(n)
         #r = 37404609
         #g = n + 1    
         c1 = pow(1 + n, m, n**2)
@@ -35,7 +36,8 @@ class Paillier:
         c = (c1 * c2) % (n**2)
         return c
 
-    def random_coprime(self,n):
+    @staticmethod
+    def random_coprime(n):
         while True:
             r = random.randint(1, n-1)
             if math.gcd(r, n) == 1:
@@ -58,32 +60,3 @@ class Paillier:
 
 def initialize_paillier():
     return Paillier(key_length=2048)
-
-
-# To test:
-
-# Instantiate the Paillier cryptosystem with a key length of 1024 bits
-# p = Paillier(key_length=2048)
-
-# n = p.get_pubkey()
-# print(f'\npublic key is: {n}')
-# print(f'\nprivate key is: {p.privkey}')
-
-# message = b = b'hello,34'
-# message = int.from_bytes(b, byteorder='big')
-
-# print(f'\nmessage is: {message}')
-
-# # Encrypt the plaintext message "123456"
-# ciphertext = p.encrypt(message,n)
-
-# # Decrypt the ciphertext
-# decrypted_message = p.decrypt(ciphertext , p.privkey,p.pubkey)
-
-# # Print the results
-# print("\nCiphertext:", ciphertext)
-
-# message = decrypted_message.to_bytes((decrypted_message.bit_length() + 7) // 8, byteorder='big')
-
-# print("\nDecrypted message:", message)
-

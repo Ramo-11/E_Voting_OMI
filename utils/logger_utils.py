@@ -12,10 +12,13 @@ def get_logger(file_name):
     while not os.path.exists(os.path.join(root_dir, ".git")):
         root_dir = os.path.dirname(root_dir)
 
-    if current_dir == root_dir:
+    if os.path.normcase(current_dir) == os.path.normcase(root_dir):
         file = "logs/{}.log".format(file_name) 
     else:
         file = "../../logs/{}.log".format(file_name)
+
+    # Ensure that the directory exists
+    os.makedirs(os.path.dirname(file), exist_ok=True)
     
     file_handler = logging.handlers.RotatingFileHandler(file, maxBytes=10485760, backupCount=1)
     # change this for different logging levels:

@@ -60,7 +60,25 @@ class Server:
 
     def receive_message(self):
         self.server_socket.settimeout(10)
-        message = self.server_socket.recv(int(self.length))
+        # message = self.server_socket.recv(int(self.length))
+        length_prefix = self.server_socket.recv(4)
+        if length_prefix != b'':
+            self.logger.debug(f"Len prefix: {length_prefix}")
+        message_len = int.from_bytes(length_prefix, "big")
+        if message_len != 0:
+            self.logger.debug(f"Len: {message_len}")
+        message = b''
+        if message_len > self.length:
+            # Loop until all message data is received
+            while len(message) < message_len:
+                # Determine amount of data to receive in this iteration
+                remaining_len = message_len - len(message)
+                chunk_size = self.length if remaining_len > self.length else remaining_len
+                # Receive data and append to buffer
+                chunk = self.server_socket.recv(chunk_size)
+                message += chunk
+        else:
+            message = self.server_socket.recv(int(self.length))
         return message
     
     def listen_to_client(self, client, address):

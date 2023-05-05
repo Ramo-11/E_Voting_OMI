@@ -36,6 +36,6 @@ voter1.receive_message_from_collector(voter1.c1_sock)
 voter1.close_connection(voter1.c1_sock)
 
 voter1.start_channel_with_admin(port=3003)
-ballot_message = Voter_Ballot_Message(voter1.all_ballots)
+ballot_message = Voter_Ballot_Message(voter1.all_ballots, voter1.all_shares)
 voter1.send_message(ballot_message.to_bytes(), voter1.admin_sock)
 voter1.close_connection(voter1.admin_sock)
