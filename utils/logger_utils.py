@@ -23,7 +23,7 @@ def get_logger(file_name):
     file_handler = logging.handlers.RotatingFileHandler(file, maxBytes=10485760, backupCount=1)
     # change this for different logging levels:
         # INFO, WARNING, DEBUG, ERROR, CRITICAL
-    file_handler.setLevel(logging.DEBUG)
+    file_handler.setLevel(logging.INFO)
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)

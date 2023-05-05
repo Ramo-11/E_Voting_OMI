@@ -122,8 +122,8 @@ class Client:
                 if self.location_tracker < 2:
                     self.location_tracker += 1
                     self.extract_location_and_shares(message)  
-                    self.logger.info(f'location = {self.location}')
                 if self.location_tracker == 2:    
+                    print(f'Your secret location is: {self.location}')
                     self.start_voting()
             else:
                 self.logger.error(f'Received unknown messge from collector: {message}')
@@ -154,7 +154,6 @@ class Client:
         x = int.from_bytes(message_parts[2], byteorder='big')
         x_prime = int.from_bytes(message_parts[3], byteorder='big')
         self.all_shares.append([x, x_prime])
-        self.logger.info(f'shares: x = {x}, x_prime = {x_prime}')
 
     def start_voting(self):
         print(list(self.voting_vector.keys())[0])
@@ -176,8 +175,9 @@ class Client:
         vote = q1_answer + ',' + q2_answer + ',' + q3_answer
         voting_vector = self.generate_voting_vector(vote)
         self.logger.debug(f'voting vector: {voting_vector}')
+        self.logger.info(f'shares: {self.all_shares}')
         self.generate_all_ballots(voting_vector, self.all_shares)
-        self.logger.info(f'Ballots = {self.all_ballots}')
+        print(f'Secret Ballots = {self.all_ballots}')
     
     def generate_voting_vector(self, vote):
         vector = '000000000'
