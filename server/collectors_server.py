@@ -31,6 +31,7 @@ class Collector_Server(Server):
         self.other_c_pk = None
         self.other_collector_sock = None
         self.registered_voters = [False, False, False]
+        self.verified_voters = 0
         self.m = None
         self.x = 0
         self.x_prime = 0

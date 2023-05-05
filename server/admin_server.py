@@ -228,6 +228,4 @@ class Admin_Server(Server):
                 print(f"\tThe winner is {responses[cur_max_pos]} with {results[cur_max_pos]} votes.")
             else:
                 print(f"\tAll candidates tied.")
-
-    
         
